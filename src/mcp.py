@@ -123,6 +123,10 @@ class LLMProvider:
             
             logger.info(f"Gerando resposta com modelo {model} (temperatura: {temperature})")
             
+            # Ajusta o prompt para gerar resposta no formato correto
+            if format == "markdown":
+                prompt = f"Por favor, formate sua resposta em Markdown com:\n- Títulos e subtítulos\n- Listas\n- Destaques\n- Tabelas quando relevante\n\nPrompt: {prompt}"
+            
             response = self.client.chat.completions.create(
                 model=model,
                 messages=[{"role": "user", "content": prompt}],
@@ -131,14 +135,19 @@ class LLMProvider:
             
             content = response.choices[0].message.content
             
-            if format == "markdown":
-                return content
-            else:
-                return {"content": content, "metadata": {"status": "success"}}
+            # Retorna sempre um dicionário estruturado
+            return {
+                "content": content,
+                "metadata": {
+                    "status": "success",
+                    "format": format
+                }
+            }
                 
         except Exception as e:
             logger.error(f"Erro ao gerar resposta: {str(e)}")
-            return None 
+            return None
+
 class MCPHandler:
     """Manipulador do protocolo MCP."""
 
@@ -174,7 +183,12 @@ class MCPHandler:
             logger.info(f"Metadata: {metadata}")
             
             response = self.llm_provider.generate(content, metadata.get("options", {}))
-            return response
+            
+            if response:
+                logger.info(f"Resposta gerada: {response['content']}")
+                return response["content"]
+            
+            return None
             
         except Exception as e:
             logger.error(f"Erro ao processar mensagem: {str(e)}")
