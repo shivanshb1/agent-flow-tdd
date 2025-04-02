@@ -11,7 +11,7 @@ VERSION := $(shell cat VERSION || echo "0.1.0")
 DIST_DIR := dist
 BUILD_DIR := build
 
-.PHONY: all install clean create-venv pack deploy undeploy help build publish version update-changelog test test-cli test-e2e cli mcp
+.PHONY: all install clean create-venv pack deploy undeploy help build publish version update-changelog test test-cli test-e2e cli cli-feature cli-status cli-mcp
 
 help:  ## Mostra esta mensagem de ajuda
 	@echo "Agent Flow TDD - Framework para automação de fluxo de features TDD"
@@ -88,10 +88,16 @@ test-e2e: ## Executa testes end-to-end
 	@$(VENV_BIN)/pytest -v src/tests/e2e/
 	@echo "✅ Testes E2E concluídos"
 
-cli: ## Executa o CLI interativo
-	@echo "🖥️ Iniciando CLI..."
-	@$(VENV_PYTHON) -m src.cli
+cli-feature: ## Executa o CLI no modo feature
+	@echo "🖥️ Iniciando CLI no modo feature..."
+	@$(VENV_PYTHON) -m src.cli feature "Descreva sua feature aqui"
 
-mcp: ## Executa o modo MCP (stdin/stdout)
-	@echo "🔄 Iniciando modo MCP..."
-	@$(VENV_PYTHON) -m src.cli mcp 
+cli-status: ## Executa o CLI no modo status
+	@echo "🖥️ Iniciando CLI no modo status..."
+	@$(VENV_PYTHON) -m src.cli status
+
+cli-mcp: ## Executa o CLI no modo MCP
+	@echo "🖥️ Iniciando CLI no modo MCP..."
+	@$(VENV_PYTHON) -m src.cli mcp
+
+cli: cli-feature ## Alias para cli-feature (comando padrão) 
