@@ -22,12 +22,13 @@ from src.app import AgentOrchestrator
 app = typer.Typer(help="Agent Flow TDD - Framework para automação de fluxo de features TDD")
 console = Console()
 
-# Inicializa o orquestrador com a chave da API
-api_key = os.environ.get("OPENAI_KEY")
-if not api_key:
-    console.print("[red]ERRO: A variável de ambiente OPENAI_KEY não está definida[/red]")
-    sys.exit(1)
-orchestrator = AgentOrchestrator(api_key=api_key)
+def get_orchestrator():
+    """Cria e retorna uma instância do orquestrador."""
+    api_key = os.environ.get("OPENAI_KEY")
+    if not api_key:
+        console.print("[red]ERRO: A variável de ambiente OPENAI_KEY não está definida[/red]")
+        sys.exit(1)
+    return AgentOrchestrator(api_key=api_key)
 
 @app.command()
 def feature(
@@ -107,6 +108,9 @@ def feature(
             max_tokens=max_tokens,
         )
 
+        # Inicializa o orquestrador
+        orchestrator = get_orchestrator()
+
         # Processa a feature usando o orquestrador
         result = orchestrator.handle_input(prompt)
 
@@ -135,6 +139,9 @@ def status() -> None:
         # Obtém modelos disponíveis
         model_manager = ModelManager()
         available_models = model_manager.get_available_models()
+
+        # Inicializa o orquestrador
+        orchestrator = get_orchestrator()
 
         # Cria tabela de status
         table = Table(title="Status do Sistema")
@@ -181,6 +188,9 @@ def mcp() -> None:
         console = Console(file=sys.stderr)
         console.print("[green]Iniciando modo MCP via stdin/stdout...[/green]")
         
+        # Inicializa o orquestrador
+        orchestrator = get_orchestrator()
+        
         while True:
             try:
                 # Lê comando da entrada padrão
@@ -198,42 +208,44 @@ def mcp() -> None:
                         "status": "success",
                         "result": result
                     }
+                    print(json.dumps(response))
                 elif command["type"] == "status":
                     env_status = get_env_status()
                     model_manager = ModelManager()
+                    available_models = model_manager.get_available_models()
                     response = {
                         "status": "success",
                         "result": {
                             "env": env_status,
-                            "models": model_manager.get_available_models(),
-                            "orchestrator": "active" if orchestrator else "inactive"
+                            "models": available_models,
+                            "orchestrator": True
                         }
                     }
+                    print(json.dumps(response))
                 else:
                     response = {
                         "status": "error",
-                        "error": f"Comando desconhecido: {command['type']}"
+                        "message": f"Comando desconhecido: {command['type']}"
                     }
+                    print(json.dumps(response))
                 
-                # Envia resposta para stdout
+            except json.JSONDecodeError:
+                response = {
+                    "status": "error",
+                    "message": "Comando inválido: JSON mal formatado"
+                }
                 print(json.dumps(response))
-                sys.stdout.flush()
                 
-            except json.JSONDecodeError as e:
-                print(json.dumps({
-                    "status": "error",
-                    "error": f"JSON inválido: {str(e)}"
-                }))
-                sys.stdout.flush()
             except Exception as e:
-                print(json.dumps({
+                log_error(e)
+                response = {
                     "status": "error",
-                    "error": str(e)
-                }))
-                sys.stdout.flush()
-    
-    except KeyboardInterrupt:
-        console.print("[yellow]Encerrando modo MCP...[/yellow]")
+                    "message": str(e)
+                }
+                print(json.dumps(response))
+                
+            sys.stdout.flush()
+            
     except Exception as e:
         log_error(e)
         console.print(f"[red]Erro no modo MCP: {str(e)}[/red]")
