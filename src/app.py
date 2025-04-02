@@ -1,6 +1,6 @@
 import openai
 import time
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import json
 from openai import OpenAI
 
@@ -21,8 +21,8 @@ class ConversationHistory:
         return "\n".join([f"{msg.source}: {msg.content}" for msg in self.messages[-window_size:]])
 
 class TriageAgent:
-    def __init__(self):
-        self.client = OpenAI()
+    def __init__(self, api_key: Optional[str] = None):
+        self.client = OpenAI(api_key=api_key)
         self.system_prompt = """
         Você é um roteador especializado em desenvolvimento de software. Sua tarefa é analisar a conversa e decidir quais agentes devem ser acionados:
         - Pré-processamento: Quando precisar clarificar requisitos ou processar dados
@@ -44,8 +44,8 @@ class TriageAgent:
         return json.loads(response.choices[0].message.content)
 
 class DeterministicPreprocessingAgent:
-    def __init__(self):
-        self.client = OpenAI()
+    def __init__(self, api_key: Optional[str] = None):
+        self.client = OpenAI(api_key=api_key)
         self.system_prompt = """
         Você é um especialista em engenharia de requisitos. Suas tarefas:
         1. Limpeza: Remover ambiguidades e subjetividades
@@ -67,8 +67,8 @@ class DeterministicPreprocessingAgent:
         return response.choices[0].message.content
 
 class AnalyticalAnalysisAgent:
-    def __init__(self):
-        self.client = OpenAI()
+    def __init__(self, api_key: Optional[str] = None):
+        self.client = OpenAI(api_key=api_key)
         self.system_prompt = """
         Você é um arquiteto de software experiente. Realize:
         1. Análise Estatística: Quantidade/Complexidade de requisitos
@@ -90,8 +90,8 @@ class AnalyticalAnalysisAgent:
         return response.choices[0].message.content
 
 class ToolVisualizationAgent:
-    def __init__(self):
-        self.client = OpenAI()
+    def __init__(self, api_key: Optional[str] = None):
+        self.client = OpenAI(api_key=api_key)
         self.markdown_prompt = """
         Transforme a análise em markdown com:
         - Seções hierárquicas
@@ -125,12 +125,12 @@ class ToolVisualizationAgent:
         return response.choices[0].message.content
 
 class AgentOrchestrator:
-    def __init__(self):
+    def __init__(self, api_key: Optional[str] = None):
         self.history = ConversationHistory()
-        self.triage = TriageAgent()
-        self.preprocessor = DeterministicPreprocessingAgent()
-        self.analyst = AnalyticalAnalysisAgent()
-        self.visualizer = ToolVisualizationAgent()
+        self.triage = TriageAgent(api_key=api_key)
+        self.preprocessor = DeterministicPreprocessingAgent(api_key=api_key)
+        self.analyst = AnalyticalAnalysisAgent(api_key=api_key)
+        self.visualizer = ToolVisualizationAgent(api_key=api_key)
     
     def handle_input(self, user_input: str) -> Dict[str, Any]:
         # Registrar entrada do usuário
@@ -168,7 +168,13 @@ class AgentOrchestrator:
 
 # Uso
 if __name__ == "__main__":
-    orchestrator = AgentOrchestrator()
+    import os
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        print("ERRO: A variável de ambiente OPENAI_API_KEY não está definida")
+        exit(1)
+        
+    orchestrator = AgentOrchestrator(api_key=api_key)
     user_prompt = "Preciso de um sistema de login com autenticação de dois fatores"
     result = orchestrator.handle_input(user_prompt)
     print("Resultado Final:", json.dumps(result, indent=2))

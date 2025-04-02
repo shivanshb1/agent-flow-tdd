@@ -5,6 +5,7 @@ import asyncio
 import json
 import sys
 from typing import Optional
+import os
 
 import typer
 from rich.console import Console
@@ -20,7 +21,13 @@ from src.app import AgentOrchestrator
 
 app = typer.Typer(help="Agent Flow TDD - Framework para automação de fluxo de features TDD")
 console = Console()
-orchestrator = AgentOrchestrator()
+
+# Inicializa o orquestrador com a chave da API
+api_key = os.environ.get("OPENAI_API_KEY")
+if not api_key:
+    console.print("[red]ERRO: A variável de ambiente OPENAI_API_KEY não está definida[/red]")
+    sys.exit(1)
+orchestrator = AgentOrchestrator(api_key=api_key)
 
 @app.command()
 def feature(
