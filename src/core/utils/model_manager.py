@@ -12,6 +12,9 @@ from pydantic import BaseModel
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from src.core.utils.env import get_env_var
+from src.core.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class ModelProvider(str, Enum):
@@ -216,4 +219,59 @@ class ModelManager:
             response = await model.generate_content_async(prompt, **kwargs)
             return response.text
 
-        raise ValueError(f"Provedor {config.provider} não suportado") 
+        raise ValueError(f"Provedor {config.provider} não suportado")
+
+    def configure(
+        self,
+        model: str = "gpt-4-turbo",
+        elevation_model: Optional[str] = None,
+        force: bool = False,
+        api_key: Optional[str] = None,
+        timeout: int = 30,
+        max_retries: int = 3,
+        temperature: float = 0.7,
+        max_tokens: Optional[int] = None,
+    ) -> None:
+        """
+        Configura o gerenciador de modelos com parâmetros específicos.
+        
+        Args:
+            model: Nome do modelo principal
+            elevation_model: Nome do modelo de fallback
+            force: Se True, força o uso do modelo principal sem fallback
+            api_key: Chave da API (opcional, usa a do ambiente se não fornecida)
+            timeout: Tempo limite em segundos
+            max_retries: Número máximo de tentativas
+            temperature: Temperatura para geração
+            max_tokens: Número máximo de tokens
+        """
+        try:
+            # Se uma nova chave foi fornecida, recarrega as configurações
+            if api_key:
+                self.configs.clear()
+                self._add_openai_models(api_key)
+            
+            # Verifica se o modelo principal está disponível
+            if not self.get_model_config(model):
+                raise ValueError(f"Modelo {model} não disponível")
+            
+            # Se houver modelo de elevação, verifica se está disponível
+            if elevation_model and not self.get_model_config(elevation_model):
+                raise ValueError(f"Modelo de elevação {elevation_model} não disponível")
+            
+            # Atualiza as configurações do modelo principal
+            self.configs[model] = ModelConfig(
+                provider=ModelProvider.OPENAI,
+                model_id=model,
+                api_key=api_key or get_env_var("OPENAI_KEY"),
+                timeout=timeout,
+                max_retries=max_retries,
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
+            
+            logger.info(f"ModelManager configurado com sucesso: modelo={model}, elevation={elevation_model}")
+            
+        except Exception as e:
+            logger.error(f"Erro ao configurar ModelManager: {str(e)}")
+            raise 
