@@ -65,44 +65,22 @@ build_requires = [
 ]
 
 setup(
-    name="agent-flow-tdd",
-    version="2025.4.1.2",
-    description="Agent Flow TDD - Biblioteca para desenvolvimento orientado a testes com agentes",
-    long_description=open("README.md").read(),
-    long_description_content_type="text/markdown",
-    author="Ricardo Malnati",
-    author_email="ricardomalnati@gmail.com",
-    python_requires=">=3.9",
+    name="prompt-tdd",
+    version="0.1.0",
     packages=find_packages(),
-    package_dir={"": "."},
-    install_requires=install_requires,
-    extras_require={
-        "dev": dev_requires,
-        "build": build_requires,
-        "all": dev_requires + build_requires,
-    },
+    install_requires=[
+        "typer>=0.9.0",
+        "rich>=13.7.0",
+        "openai>=1.12.0",
+        "python-dotenv>=1.0.0",
+        "pydantic>=2.6.0",
+        "pytest>=8.0.0",
+        "pytest-cov>=4.1.0",
+        "pytest-mock>=3.12.0"
+    ],
     entry_points={
         "console_scripts": [
-            "prompt-tdd=src.cli:app",
-            "cz=commitizen.cli:main",
-        ],
-    },
-    classifiers=[
-        "Development Status :: 3 - Alpha",
-        "Intended Audience :: Developers",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
-        "Topic :: Software Development :: Libraries :: Python Modules",
-    ],
-    setup_requires=build_requires,  # Necessário para o próprio setup.py
-    options={
-        "flake8": {
-            "max_line_length": 100,
-            "exclude": ".git,__pycache__,build,dist,*.egg-info",
-        },
-    },
+            "prompt-tdd=src.cli:app"
+        ]
+    }
 ) 

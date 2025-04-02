@@ -1,6 +1,6 @@
-# Agent Flow TDD
+# Prompt TDD
 
-Framework para automação de fluxo de features TDD usando agentes de IA.
+Framework para desenvolvimento orientado a testes usando prompts em linguagem natural.
 
 ## 🚀 Funcionalidades
 
@@ -212,41 +212,55 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 ## Uso
 
-Para usar o Agent Flow TDD, você tem duas opções:
+O Prompt TDD pode ser usado de duas formas:
 
-### 1. Usando o Makefile (Recomendado)
-
-O Makefile fornece comandos convenientes para executar o CLI:
+### 1. Usando o Makefile (recomendado)
 
 ```bash
-# Instalar dependências e configurar ambiente
-make install
+# Criar uma nova feature
+make run "Criar um sistema de login com autenticação JWT"
 
-# Executar o CLI no modo feature (interativo)
-make cli
+# Verificar status do ambiente
+make run --mode status ""
 
-# Ou especificar o modo diretamente:
-make cli-feature  # Para criar uma nova feature
-make cli-status   # Para verificar o status
-make cli-mcp      # Para iniciar o servidor MCP
+# Iniciar servidor MCP
+make run --mode mcp ""
 ```
 
 ### 2. Usando o comando diretamente
 
-Se você preferir usar o comando diretamente, primeiro ative o ambiente virtual:
+Primeiro, ative o ambiente virtual:
 
 ```bash
-# Ativar o ambiente virtual
 source .venv/bin/activate
-
-# Agora você pode usar o comando prompt-tdd
-prompt-tdd feature "Sua feature aqui"
-prompt-tdd status
-prompt-tdd mcp
 ```
 
-O comando `prompt-tdd` suporta os seguintes subcomandos:
+Então use o comando `prompt-tdd`:
 
-- `feature`: Cria uma nova feature baseada no prompt fornecido
-- `status`: Verifica o status atual do projeto
-- `mcp`: Inicia o servidor MCP (Model Context Protocol)
+```bash
+# Criar uma nova feature
+prompt-tdd "Criar um sistema de login com autenticação JWT"
+
+# Verificar status do ambiente
+prompt-tdd --mode status ""
+
+# Iniciar servidor MCP
+prompt-tdd --mode mcp ""
+```
+
+## Opções
+
+- `--format`: Formato de saída (json ou markdown). Padrão: json
+- `--mode`: Modo de operação (feature, status ou mcp). Padrão: feature
+
+## Testes
+
+```bash
+make test
+```
+
+## Limpeza
+
+```bash
+make clean
+```

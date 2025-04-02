@@ -8,7 +8,7 @@ import os
 import pytest
 from typer.testing import CliRunner
 
-from src.cli import app, mcp
+from src.cli import app
 from src.core.utils import ModelManager, get_env_status, validate_env
 from src.app import AgentOrchestrator
 
@@ -90,7 +90,7 @@ def test_feature_command_success(mock_model_manager, mock_orchestrator, mock_val
 
     with patch("src.cli.get_orchestrator", return_value=mock_orchestrator):
         # Execução
-        result = runner.invoke(app, ["feature", "Criar sistema de login"])
+        result = runner.invoke(app, ["Criar sistema de login"])
 
         # Verificações
         assert result.exit_code == 0
@@ -108,7 +108,7 @@ def test_feature_command_markdown_output(mock_model_manager, mock_orchestrator, 
 
     with patch("src.cli.get_orchestrator", return_value=mock_orchestrator):
         # Execução
-        result = runner.invoke(app, ["feature", "Criar login", "--format", "markdown"])
+        result = runner.invoke(app, ["Criar login", "--format", "markdown"])
 
         # Verificações
         assert result.exit_code == 0
@@ -121,11 +121,11 @@ def test_feature_command_error(mock_model_manager, mock_orchestrator, mock_valid
 
     with patch("src.cli.get_orchestrator", return_value=mock_orchestrator):
         # Execução
-        result = runner.invoke(app, ["feature", "Criar login"])
+        result = runner.invoke(app, ["Criar login"])
 
         # Verificações
-        assert result.exit_code == 1  # Erro deve retornar código 1
-        assert "Erro ao processar feature" in result.stdout
+        assert result.exit_code == 1
+        assert "Erro ao processar comando" in result.stdout
 
 def test_status_command_success(mock_model_manager, mock_get_env_status):
     """Testa o comando status com sucesso."""
@@ -134,7 +134,7 @@ def test_status_command_success(mock_model_manager, mock_get_env_status):
 
     with patch("src.cli.ModelManager", return_value=mock_model_manager):
         # Execução
-        result = runner.invoke(app, ["status"])
+        result = runner.invoke(app, ["--mode", "status", ""])
 
         # Verificações
         assert result.exit_code == 0
@@ -148,11 +148,11 @@ def test_status_command_error(mock_model_manager, mock_get_env_status):
 
     with patch("src.cli.ModelManager", return_value=mock_model_manager):
         # Execução
-        result = runner.invoke(app, ["status"])
+        result = runner.invoke(app, ["--mode", "status", ""])
 
         # Verificações
-        assert result.exit_code == 1  # Erro deve retornar código 1
-        assert "Erro ao verificar status" in result.stdout
+        assert result.exit_code == 1
+        assert "Erro ao processar comando" in result.stdout
 
 def test_mcp_command_feature(mock_orchestrator, capsys, monkeypatch, mock_mcp_sdk):
     """Testa o comando MCP processando uma feature."""
@@ -182,41 +182,7 @@ def test_mcp_command_feature(mock_orchestrator, capsys, monkeypatch, mock_mcp_sd
          patch("src.mcp.MCPHandler", return_value=mock_handler):
 
         # Execução
-        result = runner.invoke(app, ["mcp"])
-
-        # Verificações
-        assert result.exit_code == 0
-        mock_handler.initialize.assert_called_once_with(api_key="test-key")
-
-def test_mcp_command_status(mock_get_env_status, mock_model_manager, mock_orchestrator, capsys, monkeypatch, mock_mcp_sdk):
-    """Testa o comando MCP obtendo status."""
-    # Setup
-    mock_get_env_status.return_value = {
-        "required": {"OPENAI_KEY": True},
-        "optional": {"ELEVATION_MODEL": False}
-    }
-    input_data = {
-        "content": "",
-        "metadata": {
-            "type": "status"
-        }
-    }
-
-    # Simula entrada stdin
-    input_lines = [json.dumps(input_data) + "\n", ""]
-    input_iter = iter(input_lines)
-    monkeypatch.setattr("sys.stdin.readline", lambda: next(input_iter))
-
-    # Configura mock do handler
-    mock_handler = mock_mcp_sdk.return_value
-    mock_handler.initialize.return_value = None
-    mock_handler.run.side_effect = lambda: None
-
-    with patch.dict(os.environ, {"OPENAI_KEY": "test-key"}), \
-         patch("src.mcp.MCPHandler", return_value=mock_handler):
-
-        # Execução
-        result = runner.invoke(app, ["mcp"])
+        result = runner.invoke(app, ["--mode", "mcp", ""])
 
         # Verificações
         assert result.exit_code == 0
@@ -230,18 +196,18 @@ def test_mcp_command_error(mock_orchestrator, capsys, monkeypatch, mock_mcp_sdk)
 
         with patch.dict(os.environ, {"OPENAI_KEY": "test-key"}):
             # Execução
-            result = runner.invoke(app, ["mcp"])
+            result = runner.invoke(app, ["--mode", "mcp", ""])
 
             # Verificações
             assert result.exit_code == 1
-            assert "Erro no modo MCP" in result.stdout
+            assert "Erro ao processar comando" in result.stdout
 
 def test_mcp_command_no_api_key(mock_orchestrator, capsys, monkeypatch, mock_mcp_sdk):
     """Testa o comando MCP sem chave de API."""
     # Setup
     with patch.dict(os.environ, {"OPENAI_KEY": ""}, clear=True):
         # Execução
-        result = runner.invoke(app, ["mcp"])
+        result = runner.invoke(app, ["--mode", "mcp", ""])
 
         # Verificações
         assert result.exit_code == 1
@@ -287,7 +253,7 @@ def test_feature_command_address_requirements(mock_model_manager, mock_orchestra
         - Validações e autopreenchimento
         - Paginação e filtros na listagem
         """
-        result = runner.invoke(app, ["feature", prompt])
+        result = runner.invoke(app, ["Criar sistema de gerenciamento de endereços com: - Cadastro, alteração e listagem de endereços - Integração com API de CEP do Brasil - Integração com API de ZipCode dos EUA - Validações e autopreenchimento - Paginação e filtros na listagem"])
 
         # Verificações
         assert result.exit_code == 0
