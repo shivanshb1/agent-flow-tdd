@@ -49,7 +49,7 @@ autoflake:
 # Limpeza
 clean:
 	@echo "🧹 Limpando arquivos temporários..."
-	@rm -rf .venv *.egg-info dist build .pytest_cache .coverage htmlcov mcp*.log mcp_pipe.log
+	@rm -rf .venv *.egg-info dist build .pytest_cache .coverage htmlcov mcp*.log logs/mcp_pipe.log
 	@find . -type d -name __pycache__ -exec rm -rf {} +
 	@echo "✨ Limpeza concluída!"
 
