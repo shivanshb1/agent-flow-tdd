@@ -114,7 +114,11 @@ class AgentOrchestrator:
         self.model_manager = ModelManager()
         
         if api_key:
-            self.model_manager.configure(api_key=api_key)
+            self.model_manager.configure(
+                model="gpt-3.5-turbo",
+                elevation_model="gpt-4-turbo",
+                api_key=api_key
+            )
             
         self.triage = TriageAgent(self.model_manager)
         self.preprocessor = DeterministicPreprocessingAgent(self.model_manager)

@@ -157,17 +157,24 @@ class ModelManager:
             ValueError: Se o modelo não estiver disponível.
             Exception: Se ocorrer um erro na geração.
         """
-        # Verifica se o modelo está disponível
-        config = self.get_model_config(model_name)
-        if not config:
-            raise ValueError(f"Modelo {model_name} não disponível")
-
-        # Tenta usar o cache
-        cache_key = f"{model_name}:{prompt}"
-        if cached := self.cache.get(cache_key):
-            return cached
-
         try:
+            # Verifica se o modelo está disponível
+            config = self.get_model_config(model_name)
+            if not config:
+                raise ValueError(f"Modelo {model_name} não disponível")
+
+            # Tenta usar o cache
+            cache_key = f"{model_name}:{prompt}"
+            if cached := self.cache.get(cache_key):
+                return cached
+
+            # Adiciona parâmetros do modelo aos kwargs
+            kwargs.update({
+                "model": model_name,
+                "elevation_model": elevation_model,
+                "force": force,
+            })
+
             # Gera a resposta usando o modelo apropriado
             response = self._generate_with_provider(config, prompt, **kwargs)
             self.cache[cache_key] = response
@@ -181,6 +188,13 @@ class ModelManager:
             elevation_config = self.get_model_config(elevation_model)
             if not elevation_config:
                 raise ValueError(f"Modelo de elevação {elevation_model} não disponível")
+
+            # Adiciona parâmetros do modelo aos kwargs
+            kwargs.update({
+                "model": elevation_model,
+                "elevation_model": None,  # Evita recursão infinita
+                "force": True,  # Força o uso do modelo de elevação
+            })
 
             return self._generate_with_provider(elevation_config, prompt, **kwargs)
 
@@ -203,14 +217,27 @@ class ModelManager:
                 # Adiciona o prompt do usuário
                 messages.append({"role": "user", "content": prompt})
                 
-                response = client.chat.completions.create(
-                    model=config.model_id,
-                    messages=messages,
-                    temperature=config.temperature,
-                    max_tokens=config.max_tokens,
-                    **kwargs,
-                )
-                return response.choices[0].message.content
+                # Remove parâmetros não suportados
+                kwargs.pop("model", None)
+                kwargs.pop("elevation_model", None)
+                kwargs.pop("force", None)
+                
+                # Configura parâmetros padrão
+                if "temperature" not in kwargs:
+                    kwargs["temperature"] = config.temperature
+                if "max_tokens" not in kwargs and config.max_tokens:
+                    kwargs["max_tokens"] = config.max_tokens
+                
+                try:
+                    response = client.chat.completions.create(
+                        model=config.model_id,
+                        messages=messages,
+                        **kwargs,
+                    )
+                    return response.choices[0].message.content
+                except Exception as e:
+                    logger.error(f"Erro ao gerar resposta com {config.model_id}: {str(e)}")
+                    raise
 
             elif config.provider == ModelProvider.OPENROUTER:
                 client = openrouter.Client(api_key=config.api_key)
@@ -223,34 +250,54 @@ class ModelManager:
                 # Adiciona o prompt do usuário
                 messages.append({"role": "user", "content": prompt})
                 
-                response = client.chat.completions.create(
-                    model=config.model_id,
-                    messages=messages,
-                    temperature=config.temperature,
-                    max_tokens=config.max_tokens,
-                    **kwargs,
-                )
-                return response.choices[0].message.content
+                # Remove parâmetros não suportados
+                kwargs.pop("model", None)
+                kwargs.pop("elevation_model", None)
+                kwargs.pop("force", None)
+                
+                # Configura parâmetros padrão
+                if "temperature" not in kwargs:
+                    kwargs["temperature"] = config.temperature
+                if "max_tokens" not in kwargs and config.max_tokens:
+                    kwargs["max_tokens"] = config.max_tokens
+                
+                try:
+                    response = client.chat.completions.create(
+                        model=config.model_id,
+                        messages=messages,
+                        **kwargs,
+                    )
+                    return response.choices[0].message.content
+                except Exception as e:
+                    logger.error(f"Erro ao gerar resposta com {config.model_id}: {str(e)}")
+                    raise
 
             elif config.provider == ModelProvider.GEMINI:
                 genai.configure(api_key=config.api_key)
                 model = genai.GenerativeModel(config.model_id)
                 
-                # Configura os parâmetros do modelo
-                generation_config = {
-                    "temperature": config.temperature,
-                    "max_output_tokens": config.max_tokens,
-                }
-                
                 # Remove parâmetros não suportados
                 kwargs.pop("system_prompt", None)
+                kwargs.pop("model", None)
+                kwargs.pop("elevation_model", None)
+                kwargs.pop("force", None)
                 
-                response = model.generate_content(
-                    prompt,
-                    generation_config=generation_config,
-                    **kwargs
-                )
-                return response.text
+                # Configura os parâmetros do modelo
+                generation_config = {
+                    "temperature": kwargs.pop("temperature", config.temperature),
+                    "max_output_tokens": kwargs.pop("max_tokens", config.max_tokens),
+                }
+                
+                try:
+                    response = model.generate_content(
+                        prompt,
+                        generation_config=generation_config,
+                        **kwargs
+                    )
+                    return response.text
+                except Exception as e:
+                    logger.error(f"Erro ao gerar resposta com {config.model_id}: {str(e)}")
+                    raise
 
             raise ValueError(f"Provedor {config.provider} não suportado")
             

@@ -33,13 +33,13 @@ orchestrator = AgentOrchestrator(api_key=api_key)
 def feature(
     prompt: str,
     model: str = typer.Option(
-        "gpt-4-turbo",
+        "gpt-3.5-turbo",
         "--model",
         "-m",
         help="Modelo a ser usado",
     ),
     elevation_model: Optional[str] = typer.Option(
-        None,
+        "gpt-4-turbo",
         "--elevation-model",
         "-e",
         help="Modelo alternativo para fallback",
