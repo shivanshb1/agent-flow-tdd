@@ -12,7 +12,7 @@ Após qualquer alteração em scripts ou código fonte do projeto, é obrigatór
 
 ✅ Requisitos
 	•	Executar testes e2e após:
-		•	Modificações em arquivos Python dentro de src/
+		•	Modificações em arquivos Python dentro do projeto
 		•	Alterações em scripts de automação
 		•	Mudanças em configurações do projeto
 		•	Atualizações de dependências

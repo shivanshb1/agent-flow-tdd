@@ -13,7 +13,7 @@ alwaysApply: true
 	•	Testes end-to-end (e2e)
 	•	Testes funcionais
 ❌ Exemplos proibidos:
-	•	src/apps/mdc/tests/setup.py (incorreto: não é um teste)
+	•	src/apps/tests/verify.py (incorreto: não é um teste)
 	•	tests/helpers.py (incorreto se não for um teste)
 ✅ Exemplos permitidos:
 	•	src/tests/test_feature_creation_agent.py
