@@ -27,13 +27,13 @@ os.environ["CZ_VERSION_FILES"] = "setup.py:version,src/__init__.py:__version__"
 os.environ["CZ_CUSTOMIZE_HOOK"] = "cz_customize"
 
 setup(
-    name="agent-flow-craft",
+    name="agent-flow-tdd",
     version="2025.04.01.1",
-    description="Framework para automação de fluxo de criação de features usando agentes de IA",
+    description="Framework para automação de fluxo de criação de features TDD usando agentes de IA",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    author="Seu Nome",
-    author_email="seu.email@exemplo.com",
+    author="Ricardo Malnati",
+    author_email="ricardomalnati@gmail.com",
     python_requires=">=3.9",
     packages=find_packages(),
     package_dir={"": "."},
@@ -62,7 +62,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "agent-flow-craft=src.cli.cli:app",
+            "agent-flow-tdd=src.cli:app",
             "cz=commitizen.cli:main",
         ],
     },
