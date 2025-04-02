@@ -26,11 +26,12 @@ create-venv:  ## Cria ambiente virtual Python
 	@rm -rf $(VENV_DIR)
 	@$(PYTHON) -m venv $(VENV_DIR)
 	@$(VENV_PIP) install --upgrade pip
+	@$(VENV_PIP) install -e ".[build]"  # Instala dependências de build primeiro
 	@echo "✅ Ambiente virtual criado em $(VENV_DIR)"
 
 install: create-venv  ## Instala dependências do projeto
 	@echo "📦 Instalando dependências..."
-	@$(VENV_PIP) install -e .
+	@$(VENV_PIP) install -e ".[all]"  # Instala todas as dependências
 	@echo "✅ Dependências instaladas"
 
 clean:  ## Remove arquivos temporários e caches
