@@ -98,7 +98,7 @@ class SecureLogFilter(logging.Filter):
         return f"{prefix}{mask_str}{suffix}"
 
 def setup_logging(
-    name: str = 'agent_flow_craft',
+    name: str = 'agent_flow_tdd',
     level: Union[str, int] = NUMERIC_LOG_LEVEL,
     log_file: Optional[str] = None,
     enable_rich: bool = True,
@@ -173,7 +173,7 @@ def log_execution(func=None, level=logging.INFO):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            logger = logging.getLogger('agent_flow_craft')
+            logger = logging.getLogger('agent_flow_tdd')
             
             safe_args = [logger.getEffectiveLevel() >= logging.DEBUG or SecureLogFilter().mask_sensitive_data(arg) 
                         for arg in args]

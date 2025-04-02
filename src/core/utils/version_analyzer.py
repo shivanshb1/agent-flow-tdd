@@ -6,7 +6,7 @@ import re
 import json
 from typing import Dict, Optional, Tuple
 
-from src.core.logger import get_logger, log_execution
+from .logger import get_logger, log_execution
 
 logger = get_logger(__name__)
 
