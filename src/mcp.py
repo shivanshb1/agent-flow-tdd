@@ -1,160 +1,118 @@
 # src/mpc.py
 """
-Integração com o Model Context Protocol (MCP) SDK.
+Módulo para processamento de mensagens MCP (Model Context Protocol).
 """
-import sys
 import json
 import logging
-from typing import Dict, Any, Optional
+import sys
+from typing import Any, Dict, Optional
 
 try:
-    from mcp_sdk import MCPHandler as BaseMCPHandler
-    from mcp_sdk.types import Message, Response
+    from mcp_sdk import BaseMCPHandler, Message, Response
 except ImportError:
     # Mock classes para testes
     class Message:
+        """Mock da classe Message do SDK MCP."""
         def __init__(self, content: str, metadata: Dict[str, Any]):
             self.content = content
             self.metadata = metadata
 
     class Response:
-        def __init__(self, content: Any, metadata: Dict[str, Any]):
+        """Mock da classe Response do SDK MCP."""
+        def __init__(self, content: Dict[str, Any], metadata: Optional[Dict[str, Any]] = None):
             self.content = content
-            self.metadata = metadata
+            self.metadata = metadata or {}
 
     class BaseMCPHandler:
+        """Mock da classe BaseMCPHandler do SDK MCP."""
         def __init__(self):
-            self.orchestrator = None
-        
-        def initialize(self, api_key: Optional[str] = None) -> None:
-            pass
-        
-        def handle_message(self, message: Message) -> Response:
-            pass
-        
-        def run(self):
-            # Mock do loop principal
+            self.initialized = False
+
+        def initialize(self, api_key: str) -> None:
+            """Inicializa o handler com a chave da API."""
+            self.initialized = True
+
+        def run(self) -> None:
+            """Executa o loop principal do handler."""
             while True:
                 try:
                     line = sys.stdin.readline()
                     if not line:
                         break
-                    
-                    # Parse da mensagem
+
                     data = json.loads(line)
-                    message = Message(data['content'], data.get('metadata', {}))
-                    
-                    # Processa a mensagem
+                    message = Message(data["content"], data["metadata"])
                     response = self.handle_message(message)
-                    
-                    # Envia resposta
                     print(json.dumps({
-                        'content': response.content,
-                        'metadata': response.metadata
+                        "content": response.content,
+                        "metadata": response.metadata
                     }))
-                    sys.stdout.flush()
-                    
-                except KeyboardInterrupt:
-                    break
                 except Exception as e:
-                    print(json.dumps({
-                        'content': {'error': str(e)},
-                        'metadata': {'status': 'error'}
-                    }))
-                    sys.stdout.flush()
+                    logging.error(f"Erro ao processar mensagem: {str(e)}")
+                    break
 
-from src.core.utils import ModelManager, get_env_status, validate_env
-from src.app import AgentOrchestrator
-
-logger = logging.getLogger(__name__)
+        def handle_message(self, message: Message) -> Response:
+            """Processa uma mensagem e retorna uma resposta."""
+            raise NotImplementedError()
 
 class MCPHandler(BaseMCPHandler):
-    """Handler para integração com o Model Context Protocol"""
-    
+    """Handler para processamento de mensagens MCP."""
+
     def __init__(self):
+        """Inicializa o handler."""
         super().__init__()
         self.orchestrator = None
-        
-    def initialize(self, api_key: Optional[str] = None) -> None:
-        """Inicializa o handler com a chave da API"""
-        try:
-            self.orchestrator = AgentOrchestrator(api_key=api_key)
-            logger.info("MCPHandler inicializado com sucesso")
-        except Exception as e:
-            logger.error(f"Erro ao inicializar MCPHandler: {str(e)}", exc_info=True)
-            raise
-    
+
+    def initialize(self, api_key: str) -> None:
+        """Inicializa o handler com a chave da API."""
+        super().initialize(api_key)
+        from src.app import AgentOrchestrator
+        self.orchestrator = AgentOrchestrator()
+        self.orchestrator.model_manager.configure(
+            model="gpt-3.5-turbo",
+            temperature=0.7
+        )
+        logging.info("Handler inicializado com sucesso")
+
     def handle_message(self, message: Message) -> Response:
-        """Processa uma mensagem MCP"""
+        """Processa uma mensagem e retorna uma resposta."""
         try:
-            # Extrai dados da mensagem
-            command_type = message.metadata.get("type", "feature")
-            content = message.content
+            command_type = message.metadata.get("type", "")
             options = message.metadata.get("options", {})
-            
-            # Configura o modelo se especificado
-            if "model" in options:
-                self.orchestrator.model_manager.configure(
-                    model=options["model"],
-                    api_key=options.get("api_key"),
-                    temperature=options.get("temperature", 0.7),
-                    max_tokens=options.get("max_tokens")
-                )
-            
-            # Processa o comando
+
             if command_type == "feature":
-                result = self.orchestrator.handle_input(content)
-                return Response(
-                    content=result,
-                    metadata={
-                        "status": "success",
-                        "type": "feature"
-                    }
+                # Configura o modelo com as opções fornecidas
+                model = options.get("model", "gpt-3.5-turbo")
+                temperature = options.get("temperature", 0.7)
+                self.orchestrator.model_manager.configure(
+                    model=model,
+                    temperature=temperature
                 )
+
+                # Processa a feature
+                result = self.orchestrator.handle_input(message.content)
+                return Response(content=result)
+
             elif command_type == "status":
+                from src.core.utils import get_env_status
                 env_status = get_env_status()
-                available_models = self.orchestrator.model_manager.get_available_models()
-                result = {
+                models = self.orchestrator.model_manager.get_available_models()
+                status = {
                     "env": env_status,
-                    "models": available_models,
+                    "models": models,
                     "orchestrator": True
                 }
-                return Response(
-                    content=result,
-                    metadata={
-                        "status": "success",
-                        "type": "status"
-                    }
-                )
+                return Response(content=status)
+
             else:
-                return Response(
-                    content={"error": f"Comando desconhecido: {command_type}"},
-                    metadata={
-                        "status": "error",
-                        "type": "unknown_command"
-                    }
-                )
-                
+                raise ValueError(f"Tipo de comando desconhecido: {command_type}")
+
         except Exception as e:
-            logger.error(f"Erro ao processar mensagem MCP: {str(e)}", exc_info=True)
+            logging.error(f"Erro ao processar mensagem: {str(e)}")
             return Response(
                 content={"error": str(e)},
-                metadata={
-                    "status": "error",
-                    "type": "processing_error"
-                }
+                metadata={"status": "error"}
             )
-
-    def run(self):
-        """Inicia o loop principal do protocolo"""
-        try:
-            logger.info("Iniciando serviço MCP...")
-            super().run()
-        except KeyboardInterrupt:
-            logger.info("Serviço MCP encerrado")
-        except Exception as e:
-            logger.error(f"Erro no serviço MCP: {str(e)}", exc_info=True)
-            raise
 
 if __name__ == "__main__":
     # Configuração básica de logging
