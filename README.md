@@ -112,6 +112,62 @@ cli mcp
 }
 ```
 
+## 🤖 Integração de Modelos
+
+O projeto atualmente suporta modelos OpenAI via API, mas foi projetado para ser extensível. Para integrar outros modelos:
+
+### 1. Via ModelManager
+
+Implemente um novo provider no `ModelManager`:
+
+```python
+class ModelManager:
+    def configure(self, model: str, api_key: str, **kwargs):
+        if "claude" in model.lower():
+            return self._configure_anthropic(api_key, **kwargs)
+        elif "gpt" in model.lower():
+            return self._configure_openai(api_key, **kwargs)
+        # Adicione seu provider aqui
+```
+
+### 2. Via CLI
+
+Use as opções do comando `feature`:
+
+```bash
+# OpenAI GPT-4
+cli feature "Criar API" --model gpt-4-turbo --api-key $OPENAI_KEY
+
+# Claude (quando implementado)
+cli feature "Criar API" --model claude-3 --api-key $ANTHROPIC_KEY
+```
+
+### 3. Via MCP
+
+Especifique o modelo nas options do comando:
+
+```json
+{
+  "type": "feature",
+  "prompt": "Criar API REST",
+  "options": {
+    "model": "gpt-4-turbo",  // ou "claude-3", etc
+    "api_key": "sua-chave",
+    "temperature": 0.7
+  }
+}
+```
+
+### Modelos Suportados
+
+Atualmente:
+- OpenAI GPT-3.5 Turbo
+- OpenAI GPT-4 Turbo
+
+Em desenvolvimento:
+- Anthropic Claude
+- Outros modelos via API
+
 ## 🧪 Testes
 
 O projeto usa pytest para testes. Execute:
