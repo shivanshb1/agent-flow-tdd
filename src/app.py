@@ -169,9 +169,9 @@ class AgentOrchestrator:
 # Uso
 if __name__ == "__main__":
     import os
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("OPENAI_KEY")
     if not api_key:
-        print("ERRO: A variável de ambiente OPENAI_API_KEY não está definida")
+        print("ERRO: A variável de ambiente OPENAI_KEY não está definida")
         exit(1)
         
     orchestrator = AgentOrchestrator(api_key=api_key)

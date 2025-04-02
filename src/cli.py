@@ -23,9 +23,9 @@ app = typer.Typer(help="Agent Flow TDD - Framework para automação de fluxo de 
 console = Console()
 
 # Inicializa o orquestrador com a chave da API
-api_key = os.environ.get("OPENAI_API_KEY")
+api_key = os.environ.get("OPENAI_KEY")
 if not api_key:
-    console.print("[red]ERRO: A variável de ambiente OPENAI_API_KEY não está definida[/red]")
+    console.print("[red]ERRO: A variável de ambiente OPENAI_KEY não está definida[/red]")
     sys.exit(1)
 orchestrator = AgentOrchestrator(api_key=api_key)
 

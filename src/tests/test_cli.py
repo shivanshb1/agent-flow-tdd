@@ -36,7 +36,7 @@ def mock_validate_env():
 def mock_get_env_status():
     with patch("src.cli.get_env_status") as mock:
         mock.return_value = {
-            "required": {"OPENAI_API_KEY": True},
+            "required": {"OPENAI_KEY": True},
             "optional": {"ELEVATION_MODEL": False}
         }
         yield mock
