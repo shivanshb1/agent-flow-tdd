@@ -208,7 +208,7 @@ def mcp() -> None:
                         "status": "success",
                         "result": result
                     }
-                    print(json.dumps(response))
+                    sys.stdout.write(json.dumps(response) + "\n")
                 elif command["type"] == "status":
                     env_status = get_env_status()
                     model_manager = ModelManager()
@@ -221,20 +221,20 @@ def mcp() -> None:
                             "orchestrator": True
                         }
                     }
-                    print(json.dumps(response))
+                    sys.stdout.write(json.dumps(response) + "\n")
                 else:
                     response = {
                         "status": "error",
                         "message": f"Comando desconhecido: {command['type']}"
                     }
-                    print(json.dumps(response))
+                    sys.stdout.write(json.dumps(response) + "\n")
                 
             except json.JSONDecodeError:
                 response = {
                     "status": "error",
                     "message": "Comando inválido: JSON mal formatado"
                 }
-                print(json.dumps(response))
+                sys.stdout.write(json.dumps(response) + "\n")
                 
             except Exception as e:
                 log_error(e)
@@ -242,7 +242,7 @@ def mcp() -> None:
                     "status": "error",
                     "message": str(e)
                 }
-                print(json.dumps(response))
+                sys.stdout.write(json.dumps(response) + "\n")
                 
             sys.stdout.flush()
             
