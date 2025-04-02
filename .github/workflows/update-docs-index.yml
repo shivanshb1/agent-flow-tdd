@@ -1,4 +1,13 @@
 name: Atualizar índice da documentação
+# Para desabilitar temporariamente a execução deste workflow, você pode comentar a seção "on" inteira.
+# Basta adicionar um "#" no início de cada linha da seção "on", como mostrado abaixo:
+
+# on:
+#   pull_request:
+#     types: [opened, synchronize, reopened, closed]
+#   push:
+#     branches:
+#       - '**'  # Executa em qualquer branch
 
 on:
   pull_request:
