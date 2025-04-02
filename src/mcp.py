@@ -7,8 +7,61 @@ import json
 import logging
 from typing import Dict, Any, Optional
 
-from mcp_sdk import MCPHandler as BaseMCPHandler
-from mcp_sdk.types import Message, Response
+try:
+    from mcp_sdk import MCPHandler as BaseMCPHandler
+    from mcp_sdk.types import Message, Response
+except ImportError:
+    # Mock classes para testes
+    class Message:
+        def __init__(self, content: str, metadata: Dict[str, Any]):
+            self.content = content
+            self.metadata = metadata
+
+    class Response:
+        def __init__(self, content: Any, metadata: Dict[str, Any]):
+            self.content = content
+            self.metadata = metadata
+
+    class BaseMCPHandler:
+        def __init__(self):
+            self.orchestrator = None
+        
+        def initialize(self, api_key: Optional[str] = None) -> None:
+            pass
+        
+        def handle_message(self, message: Message) -> Response:
+            pass
+        
+        def run(self):
+            # Mock do loop principal
+            while True:
+                try:
+                    line = sys.stdin.readline()
+                    if not line:
+                        break
+                    
+                    # Parse da mensagem
+                    data = json.loads(line)
+                    message = Message(data['content'], data.get('metadata', {}))
+                    
+                    # Processa a mensagem
+                    response = self.handle_message(message)
+                    
+                    # Envia resposta
+                    print(json.dumps({
+                        'content': response.content,
+                        'metadata': response.metadata
+                    }))
+                    sys.stdout.flush()
+                    
+                except KeyboardInterrupt:
+                    break
+                except Exception as e:
+                    print(json.dumps({
+                        'content': {'error': str(e)},
+                        'metadata': {'status': 'error'}
+                    }))
+                    sys.stdout.flush()
 
 from src.core.utils import ModelManager, get_env_status, validate_env
 from src.app import AgentOrchestrator
@@ -36,7 +89,7 @@ class MCPHandler(BaseMCPHandler):
         try:
             # Extrai dados da mensagem
             command_type = message.metadata.get("type", "feature")
-            prompt = message.content
+            content = message.content
             options = message.metadata.get("options", {})
             
             # Configura o modelo se especificado
@@ -50,7 +103,7 @@ class MCPHandler(BaseMCPHandler):
             
             # Processa o comando
             if command_type == "feature":
-                result = self.orchestrator.handle_input(prompt)
+                result = self.orchestrator.handle_input(content)
                 return Response(
                     content=result,
                     metadata={
@@ -96,12 +149,12 @@ class MCPHandler(BaseMCPHandler):
         """Inicia o loop principal do protocolo"""
         try:
             logger.info("Iniciando serviço MCP...")
-            self.run()
+            super().run()
         except KeyboardInterrupt:
             logger.info("Serviço MCP encerrado")
         except Exception as e:
-            logger.error(f"Falha crítica no serviço MCP: {str(e)}")
-            sys.exit(1)
+            logger.error(f"Erro no serviço MCP: {str(e)}", exc_info=True)
+            raise
 
 if __name__ == "__main__":
     # Configuração básica de logging

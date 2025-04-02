@@ -15,6 +15,30 @@ from src.app import AgentOrchestrator
 # Setup
 runner = CliRunner()
 
+# Mock do SDK MCP
+class MockMessage:
+    def __init__(self, content, metadata):
+        self.content = content
+        self.metadata = metadata
+
+class MockResponse:
+    def __init__(self, content, metadata):
+        self.content = content
+        self.metadata = metadata
+
+class MockMCPHandler:
+    def __init__(self):
+        self.orchestrator = None
+    
+    def initialize(self, api_key=None):
+        pass
+    
+    def handle_message(self, message):
+        pass
+    
+    def run(self):
+        pass
+
 @pytest.fixture
 def mock_model_manager():
     """Mock para o ModelManager."""
@@ -49,6 +73,18 @@ def mock_get_env_status():
             "optional": {"ELEVATION_MODEL": False}
         }
         yield mock
+
+@pytest.fixture
+def mock_mcp_sdk(monkeypatch):
+    """Mock do SDK MCP"""
+    mock_sdk = MagicMock()
+    mock_sdk.MCPHandler = MockMCPHandler
+    mock_sdk.Message = MockMessage
+    mock_sdk.Response = MockResponse
+    monkeypatch.setattr("src.mcp.BaseMCPHandler", MockMCPHandler)
+    monkeypatch.setattr("src.mcp.Message", MockMessage)
+    monkeypatch.setattr("src.mcp.Response", MockResponse)
+    return mock_sdk
 
 def test_feature_command_success(mock_model_manager, mock_orchestrator, mock_validate_env):
     """Testa o comando feature com sucesso."""
@@ -117,11 +153,20 @@ def test_status_command_error(mock_model_manager, mock_get_env_status):
     assert result.exit_code == 0  # Typer captura a exceção
     assert "Erro ao obter status" in result.stdout
 
-def test_mcp_command_feature(mock_orchestrator, capsys, monkeypatch):
+def test_mcp_command_feature(mock_orchestrator, capsys, monkeypatch, mock_mcp_sdk):
     """Testa o comando MCP processando uma feature."""
     # Setup
     mock_orchestrator.handle_input.return_value = {"feature": "Login"}
-    input_data = {"type": "feature", "prompt": "Criar login"}
+    input_data = {
+        "content": "Criar login",
+        "metadata": {
+            "type": "feature",
+            "options": {
+                "model": "gpt-4-turbo",
+                "temperature": 0.7
+            }
+        }
+    }
     
     # Simula entrada stdin
     input_lines = [json.dumps(input_data) + "\n", ""]
@@ -136,13 +181,13 @@ def test_mcp_command_feature(mock_orchestrator, capsys, monkeypatch):
         captured = capsys.readouterr()
         
         # Verificações
-        mock_orchestrator.handle_input.assert_called_once_with(input_data["prompt"])
-        assert json.loads(captured.out.splitlines()[0]) == {
-            "status": "success",
-            "result": {"feature": "Login"}
-        }
+        mock_orchestrator.handle_input.assert_called_once_with(input_data["content"])
+        response = json.loads(captured.out.splitlines()[0])
+        assert response["content"] == {"feature": "Login"}
+        assert response["metadata"]["status"] == "success"
+        assert response["metadata"]["type"] == "feature"
 
-def test_mcp_command_status(mock_get_env_status, mock_model_manager, mock_orchestrator, capsys, monkeypatch):
+def test_mcp_command_status(mock_get_env_status, mock_model_manager, mock_orchestrator, capsys, monkeypatch, mock_mcp_sdk):
     """Testa o comando MCP obtendo status."""
     # Setup
     mock_orchestrator.model_manager = mock_model_manager
@@ -151,7 +196,12 @@ def test_mcp_command_status(mock_get_env_status, mock_model_manager, mock_orches
         "required": {"OPENAI_KEY": True},
         "optional": {"ELEVATION_MODEL": False}
     }
-    input_data = {"type": "status"}
+    input_data = {
+        "content": "",
+        "metadata": {
+            "type": "status"
+        }
+    }
     
     # Simula entrada stdin
     input_lines = [json.dumps(input_data) + "\n", ""]
@@ -168,14 +218,14 @@ def test_mcp_command_status(mock_get_env_status, mock_model_manager, mock_orches
         
         # Verificações
         mock_model_manager.get_available_models.assert_called_once()
-        assert json.loads(captured.out.splitlines()[0]) == {
-            "status": "success",
-            "result": {
-                "env": mock_get_env_status.return_value,
-                "models": ["gpt-4"],
-                "orchestrator": True
-            }
+        response = json.loads(captured.out.splitlines()[0])
+        assert response["content"] == {
+            "env": mock_get_env_status.return_value,
+            "models": ["gpt-4"],
+            "orchestrator": True
         }
+        assert response["metadata"]["status"] == "success"
+        assert response["metadata"]["type"] == "status"
 
 def test_feature_command_address_requirements(mock_model_manager, mock_orchestrator, mock_validate_env):
     """Testa o comando feature via terminal para requisitos de endereço."""
@@ -225,7 +275,7 @@ def test_feature_command_address_requirements(mock_model_manager, mock_orchestra
     mock_orchestrator.handle_input.assert_called_once_with(prompt)
     assert "Feature processada com sucesso!" in result.stdout
 
-def test_mcp_command_address_requirements(mock_orchestrator, capsys, monkeypatch):
+def test_mcp_command_address_requirements(mock_orchestrator, capsys, monkeypatch, mock_mcp_sdk):
     """Testa o comando MCP para requisitos de endereço."""
     # Setup
     expected_result = {
@@ -257,8 +307,7 @@ def test_mcp_command_address_requirements(mock_orchestrator, capsys, monkeypatch
     mock_orchestrator.handle_input.return_value = expected_result
     
     input_data = {
-        "type": "feature",
-        "prompt": """
+        "content": """
         Criar sistema de gerenciamento de endereços com:
         - Cadastro, alteração e listagem de endereços
         - Integração com API de CEP do Brasil
@@ -266,10 +315,13 @@ def test_mcp_command_address_requirements(mock_orchestrator, capsys, monkeypatch
         - Validações e autopreenchimento
         - Paginação e filtros na listagem
         """,
-        "options": {
-            "model": "gpt-4-turbo",
-            "temperature": 0.7,
-            "format": "json"
+        "metadata": {
+            "type": "feature",
+            "options": {
+                "model": "gpt-4-turbo",
+                "temperature": 0.7,
+                "format": "json"
+            }
         }
     }
     
@@ -286,8 +338,8 @@ def test_mcp_command_address_requirements(mock_orchestrator, capsys, monkeypatch
         captured = capsys.readouterr()
         
         # Verificações
-        mock_orchestrator.handle_input.assert_called_once_with(input_data["prompt"])
-        assert json.loads(captured.out.splitlines()[0]) == {
-            "status": "success",
-            "result": expected_result
-        } 
+        mock_orchestrator.handle_input.assert_called_once_with(input_data["content"])
+        response = json.loads(captured.out.splitlines()[0])
+        assert response["content"] == expected_result
+        assert response["metadata"]["status"] == "success"
+        assert response["metadata"]["type"] == "feature" 
