@@ -1,0 +1,62 @@
+# Configurações dos modelos de IA
+providers:
+  openai:
+    models:
+      - name: gpt-4-turbo
+        max_tokens: 4000
+        temperature: 0.2
+      - name: gpt-4
+        max_tokens: 8000
+        temperature: 0.2
+      - name: gpt-3.5-turbo
+        max_tokens: 4000
+        temperature: 0.2
+    fallback_order: [gpt-4-turbo, gpt-4, gpt-3.5-turbo]
+
+  openrouter:
+    models:
+      - name: openrouter/auto
+        max_tokens: 4000
+        temperature: 0.2
+      - name: anthropic/claude-3-opus
+        max_tokens: 4000
+        temperature: 0.2
+      - name: anthropic/claude-3-sonnet
+        max_tokens: 4000
+        temperature: 0.2
+    fallback_order: [openrouter/auto, anthropic/claude-3-opus, anthropic/claude-3-sonnet]
+
+  deepseek:
+    models:
+      - name: deepseek-chat
+        max_tokens: 4000
+        temperature: 0.2
+      - name: deepseek-coder
+        max_tokens: 4000
+        temperature: 0.2
+    fallback_order: [deepseek-chat, deepseek-coder]
+
+  gemini:
+    models:
+      - name: gemini-pro
+        max_tokens: 4000
+        temperature: 0.2
+      - name: gemini-pro-vision
+        max_tokens: 4000
+        temperature: 0.2
+    fallback_order: [gemini-pro, gemini-pro-vision]
+
+# Ordem global de fallback entre provedores
+provider_fallback_order:
+  - openai
+  - openrouter
+  - deepseek
+  - gemini
+
+# Configurações padrão para todos os modelos
+default_settings:
+  max_tokens: 4000
+  temperature: 0.2
+  top_p: 1.0
+  frequency_penalty: 0.0
+  presence_penalty: 0.0 
