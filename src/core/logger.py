@@ -3,11 +3,14 @@ import os
 import sys
 import logging
 import logging.handlers
+import uuid
+import time
+from contextvars import ContextVar
 from pathlib import Path
 from functools import wraps
-import time
-import re
-from typing import Optional, Union, Any
+from typing import Optional, Union, Dict, Any, List, Tuple
+from dataclasses import dataclass, field
+import json
 from rich.console import Console
 from rich.logging import RichHandler
 
@@ -103,7 +106,8 @@ def setup_logging(
     log_file: Optional[str] = None,
     enable_rich: bool = True,
     file_max_mb: int = 10,
-    backup_count: int = 7
+    backup_count: int = 7,
+    trace_config: Optional['TraceConfig'] = None
 ) -> logging.Logger:
     """
     Configura o sistema de logging unificado com suporte a Rich e segurança
@@ -115,6 +119,7 @@ def setup_logging(
         enable_rich: Habilita saída formatada com Rich
         file_max_mb: Tamanho máximo do arquivo em MB
         backup_count: Número de arquivos de backup
+        trace_config: Configuração do sistema de tracing
         
     Returns:
         Logger configurado
@@ -166,6 +171,14 @@ def setup_logging(
         file_handler.setLevel(level)
         logger.addHandler(file_handler)
     
+    # Configuração padrão do tracing
+    if trace_config is None:
+        trace_config = TraceConfig(
+            tracing_disabled=os.environ.get("OPENAI_AGENTS_DISABLE_TRACING", "0") == "1",
+            trace_processors=[FileTraceProcessor()]
+        )
+    
+    logger.trace_config = trace_config
     return logger
 
 def log_execution(func=None, level=logging.INFO):
@@ -221,3 +234,160 @@ def log_debug(message: str) -> None:
 def get_child_logger(name: str) -> logging.Logger:
     """Obtém um logger filho configurado"""
     return logger.getChild(name)
+
+# Context variables para tracing
+current_trace: ContextVar[Optional['Trace']] = ContextVar('current_trace', default=None)
+current_span: ContextVar[Optional['Span']] = ContextVar('current_span', default=None)
+
+@dataclass
+class Span:
+    """Representa uma operação temporal dentro de um trace"""
+    span_id: str = field(default_factory=lambda: f"span_{uuid.uuid4().hex}")
+    trace_id: str
+    parent_id: Optional[str] = None
+    span_type: str = "custom"
+    name: Optional[str] = None
+    start_time: float = field(default_factory=time.time)
+    end_time: Optional[float] = None
+    span_data: Dict[str, Any] = field(default_factory=dict)
+    error: Optional[str] = None
+
+@dataclass
+class Trace:
+    """Representa um fluxo completo de execução"""
+    trace_id: str = field(default_factory=lambda: f"trace_{uuid.uuid4().hex}")
+    workflow_name: str = "Agent Workflow"
+    group_id: Optional[str] = None
+    start_time: float = field(default_factory=time.time)
+    end_time: Optional[float] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    spans: List[Span] = field(default_factory=list)
+    disabled: bool = False
+    config: 'TraceConfig' = field(default_factory=lambda: TraceConfig())
+
+@dataclass
+class TraceConfig:
+    """Configuração para controle do tracing"""
+    tracing_disabled: bool = False
+    trace_include_sensitive_data: bool = False
+    trace_processors: List['TraceProcessor'] = field(default_factory=list)
+
+class TraceProcessor:
+    """Interface para processamento de traces"""
+    def process_trace(self, trace: Trace):
+        raise NotImplementedError
+
+class FileTraceProcessor(TraceProcessor):
+    """Armazena traces em arquivo JSON"""
+    def __init__(self, file_path: str = "traces.json"):
+        self.file_path = Path(LOG_DIR) / file_path
+        self.file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    def process_trace(self, trace: Trace):
+        with open(self.file_path, "a") as f:
+            f.write(json.dumps(trace.__dict__, default=str) + "\n")
+
+def trace(
+    workflow_name: str = "Agent Workflow",
+    group_id: Optional[str] = None,
+    disabled: Optional[bool] = None,
+    metadata: Optional[Dict] = None
+):
+    """Context manager para criação de traces"""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            logger = logging.getLogger('agent_flow_tdd')
+            if logger.trace_config.tracing_disabled or disabled:
+                return func(*args, **kwargs)
+
+            parent_trace = current_trace.get()
+            new_trace = Trace(
+                workflow_name=workflow_name,
+                group_id=group_id,
+                metadata=metadata or {},
+                config=logger.trace_config
+            )
+
+            token = current_trace.set(new_trace)
+            try:
+                result = func(*args, **kwargs)
+                new_trace.end_time = time.time()
+                
+                # Processar trace
+                for processor in logger.trace_config.trace_processors:
+                    processor.process_trace(new_trace)
+                
+                return result
+            except Exception as e:
+                new_trace.end_time = time.time()
+                new_trace.metadata['error'] = str(e)
+                raise
+            finally:
+                current_trace.reset(token)
+
+        return wrapper
+    return decorator
+
+def span(
+    span_type: str = "custom",
+    name: Optional[str] = None,
+    capture_args: bool = False
+):
+    """Decorador para criação de spans"""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            current_t = current_trace.get()
+            current_s = current_span.get()
+            
+            if not current_t or current_t.disabled:
+                return func(*args, **kwargs)
+
+            new_span = Span(
+                trace_id=current_t.trace_id,
+                parent_id=current_s.span_id if current_s else None,
+                span_type=span_type,
+                name=name or func.__name__,
+                span_data={
+                    'function': func.__name__,
+                    'module': func.__module__,
+                    'args': mask_arguments(args, kwargs) if capture_args else None
+                }
+            )
+
+            token = current_span.set(new_span)
+            try:
+                result = func(*args, **kwargs)
+                new_span.end_time = time.time()
+                current_t.spans.append(new_span)
+                return result
+            except Exception as e:
+                new_span.end_time = time.time()
+                new_span.error = str(e)
+                current_t.spans.append(new_span)
+                raise
+            finally:
+                current_span.reset(token)
+
+        return wrapper
+    return decorator
+
+def mask_arguments(args: Tuple, kwargs: Dict) -> Dict:
+    """Mascara argumentos sensíveis para inclusão nos spans"""
+    masked_args = [SecureLogFilter().mask_sensitive_data(arg) for arg in args]
+    masked_kwargs = {
+        k: SecureLogFilter().mask_sensitive_data(v) if 'password' not in k else '***'
+        for k, v in kwargs.items()
+    }
+    return {'args': masked_args, 'kwargs': masked_kwargs}
+
+# Span types específicos
+def agent_span(name: str = "Agent Run"):
+    return span(span_type="agent", name=name, capture_args=True)
+
+def generation_span(name: str = "LLM Generation"):
+    return span(span_type="generation", name=name)
+
+def tool_span(name: str = "Tool Execution"):
+    return span(span_type="tool", name=name, capture_args=True)

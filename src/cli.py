@@ -12,6 +12,7 @@ from rich.console import Console
 
 from src.core.utils import validate_env
 from src.app import AgentOrchestrator
+from src.core.logger import trace, agent_span, generation_span
 
 from src.mcp import MCPHandler, LLMProvider, PromptManager
 
@@ -46,6 +47,8 @@ def read_server_response(timeout: int = 10) -> Optional[str]:
     return None
 
 @app.command()
+@trace(workflow_name="CLI Workflow")
+@agent_span()
 def main(
     prompt: str,
     mode: str = typer.Option("cli", help="Modo de execução (cli ou mcp)"),
@@ -67,7 +70,8 @@ def main(
             handler.run()
         else:
             # Modo CLI padrão
-            response = llm_provider.generate(prompt, {"format": format})
+            with generation_span(name="LLM Generation"):
+                response = llm_provider.generate(prompt, {"format": format})
             if response:
                 print(response)
             else:
