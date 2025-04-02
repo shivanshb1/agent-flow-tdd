@@ -1,6 +1,6 @@
-# Agent Flow TDD
+# Prompt TDD
 
-Framework para automação de fluxo de features TDD usando agentes de IA.
+Um sistema para desenvolvimento orientado a testes usando prompts de IA.
 
 ## 🚀 Funcionalidades
 
@@ -20,26 +20,19 @@ Framework para automação de fluxo de features TDD usando agentes de IA.
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/seu-usuario/agent-flow-tdd.git
-cd agent-flow-tdd
+git clone https://github.com/seu-usuario/prompt-tdd.git
+cd prompt-tdd
 ```
 
-2. Crie e ative o ambiente virtual:
+2. Crie um arquivo `.env` com sua chave da API do OpenAI:
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # Linux/Mac
-# ou
-.venv\Scripts\activate  # Windows
+cp .env.example .env
+# Edite o arquivo .env e adicione sua chave da API
 ```
 
 3. Instale as dependências:
 ```bash
 make install
-```
-
-4. Configure a variável de ambiente `OPENAI_KEY`:
-```bash
-export OPENAI_KEY="sua-chave-aqui"
 ```
 
 ## 🎮 Comandos Disponíveis
@@ -65,10 +58,10 @@ Inicia o CLI para processamento de features.
 make cli
 
 # Exemplos de uso:
-cli feature "Criar sistema de login com autenticação de dois fatores"
-cli feature "Criar sistema de cadastro de usuários" --model gpt-4-turbo
-cli feature "Criar API REST" --format markdown
-cli status
+prompt-tdd feature "Criar sistema de login com autenticação de dois fatores"
+prompt-tdd feature "Criar sistema de cadastro de usuários" --model gpt-4-turbo
+prompt-tdd feature "Criar API REST" --format markdown
+prompt-tdd status
 ```
 
 #### Opções do comando `feature`:
@@ -93,7 +86,7 @@ O projeto agora suporta o [Model Context Protocol](https://github.com/modelconte
 
 1. Inicie o modo MCP:
 ```bash
-cli mcp
+prompt-tdd mcp
 ```
 
 2. Envie mensagens no formato MCP:
@@ -146,10 +139,10 @@ handler.run()
 
 ```bash
 # OpenAI GPT-4
-cli feature "Criar API" --model gpt-4-turbo --api-key $OPENAI_KEY
+prompt-tdd feature "Criar API" --model gpt-4-turbo --api-key $OPENAI_KEY
 
 # Anthropic Claude
-cli feature "Criar API" --model claude-3 --api-key $ANTHROPIC_KEY
+prompt-tdd feature "Criar API" --model claude-3 --api-key $ANTHROPIC_KEY
 ```
 
 ### 3. Via MCP
@@ -209,3 +202,62 @@ Os logs são gerados automaticamente com:
 ## 📄 Licença
 
 Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+## Uso
+
+O Prompt TDD pode ser usado de duas formas:
+
+### 1. Usando o Makefile (recomendado)
+
+```bash
+# Criar uma nova feature
+make run prompt-tdd="Criar um sistema de login com autenticação JWT"
+
+# Verificar status do ambiente
+make run prompt-tdd="" mode=status
+
+# Iniciar servidor MCP em background (sem saída no terminal)
+make run prompt-tdd="" mode=mcp
+# O servidor MCP será iniciado em background e você verá apenas o PID do processo
+```
+
+### 2. Usando o comando diretamente
+
+Primeiro, ative o ambiente virtual:
+
+```bash
+source .venv/bin/activate
+```
+
+Então use o comando `prompt-tdd`:
+
+```bash
+# Criar uma nova feature
+prompt-tdd "Criar um sistema de login com autenticação JWT"
+
+# Verificar status do ambiente
+prompt-tdd --mode status ""
+
+# Iniciar servidor MCP (irá bloquear o terminal e mostrar logs)
+prompt-tdd --mode mcp ""
+
+# Ou inicie em background sem logs
+nohup prompt-tdd --mode mcp "" > /dev/null 2>&1 &
+```
+
+## Opções
+
+- `--format`: Formato de saída (json ou markdown). Padrão: json
+- `--mode`: Modo de operação (feature, status ou mcp). Padrão: feature
+
+## Testes
+
+```bash
+make test
+```
+
+## Limpeza
+
+```bash
+make clean
+```

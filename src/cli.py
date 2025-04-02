@@ -1,17 +1,23 @@
 """
 CLI para interação com o agente.
 """
-import os
 import json
 import logging
+import time
+import sys
 from typing import Optional
 
 import typer
 from rich.console import Console
-from rich.markdown import Markdown
 
-from src.core.utils import ModelManager, get_env_status, validate_env
+from src.core.utils import validate_env
 from src.app import AgentOrchestrator
+
+from src.mcp import MCPHandler, LLMProvider, PromptManager
+
+# Configuração de logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = typer.Typer()
 console = Console()
@@ -20,74 +26,58 @@ def get_orchestrator(api_key: Optional[str] = None) -> AgentOrchestrator:
     """Retorna uma instância do orquestrador."""
     return AgentOrchestrator(api_key=api_key)
 
+def read_server_response(timeout: int = 10) -> Optional[str]:
+    """Lê a resposta do servidor do arquivo de log."""
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            with open("logs/mcp_server.log", "r") as f:
+                lines = f.readlines()
+                for line in reversed(lines):
+                    try:
+                        data = json.loads(line.strip())
+                        if "content" in data:
+                            return line.strip()
+                    except json.JSONDecodeError:
+                        continue
+        except FileNotFoundError:
+            pass
+        time.sleep(0.1)
+    return None
+
 @app.command()
-def feature(
+def main(
     prompt: str,
+    mode: str = typer.Option("cli", help="Modo de execução (cli ou mcp)"),
     format: str = typer.Option("json", help="Formato de saída (json ou markdown)")
 ):
-    """Processa uma feature e gera requisitos."""
+    """CLI para o prompt-tdd."""
     try:
-        validate_env()
-        orchestrator = get_orchestrator()
-        orchestrator.model_manager.configure(
-            model="gpt-3.5-turbo",
-            temperature=0.7
-        )
-
-        result = orchestrator.handle_input(prompt)
-
-        if format == "markdown":
-            markdown = orchestrator.visualizer.visualize(result)
-            console.print(Markdown(markdown))
+        # Valida variáveis de ambiente
+        if not validate_env():
+            sys.exit(1)
+            
+        # Inicializa componentes
+        llm_provider = LLMProvider()
+        prompt_manager = PromptManager()
+        
+        if mode == "mcp":
+            # Modo MCP (Message Control Protocol)
+            handler = MCPHandler(llm_provider, prompt_manager)
+            handler.run()
         else:
-            console.print_json(data=result)
-
+            # Modo CLI padrão
+            response = llm_provider.generate(prompt, {"format": format})
+            if response:
+                print(response)
+            else:
+                logger.error("Erro ao gerar resposta")
+                sys.exit(1)
+                
     except Exception as e:
-        error_msg = f"Erro ao processar feature: {str(e)}"
-        logging.error(error_msg)
-        console.print(error_msg)
-        raise typer.Exit(code=1)
-
-@app.command()
-def status():
-    """Verifica o status do sistema."""
-    try:
-        env_status = get_env_status()
-        model_manager = ModelManager()
-        available_models = model_manager.get_available_models()
-
-        status = {
-            "env": env_status,
-            "models": available_models,
-            "orchestrator": True
-        }
-
-        console.print_json(data=status)
-
-    except Exception as e:
-        error_msg = f"Erro ao verificar status: {str(e)}"
-        logging.error(error_msg)
-        console.print(error_msg)
-        raise typer.Exit(code=1)
-
-@app.command()
-def mcp():
-    """Inicia o modo MCP (Model Context Protocol)."""
-    try:
-        api_key = os.getenv("OPENAI_KEY")
-        if not api_key:
-            raise ValueError("OPENAI_KEY não definida")
-
-        from src.mcp import MCPHandler
-        handler = MCPHandler()
-        handler.initialize(api_key=api_key)
-        handler.run()
-
-    except Exception as e:
-        error_msg = f"Erro no modo MCP: {str(e)}"
-        logging.error(error_msg)
-        console.print(error_msg)
-        raise typer.Exit(code=1)
+        logger.error(f"Erro ao processar comando: {str(e)}")
+        print(f"Erro ao processar comando: {str(e)}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     app()

@@ -3,13 +3,13 @@ description: Regra para centralização de dependências no pyproject.toml e pad
 globs: 
 alwaysApply: true
 ---
-# Regra de Consolidação de Dependências Python
 
+# Regra para dependências Python
 
-❌ Práticas Proibidas
-	•	Nunca usar pyproject.toml ou setup.cfg neste projeto, pois estamos com o setup.py para isto.
-	•	Nunca instalar pacotes diretamente em scripts ou Makefile que não setup.py
-	•	Nunca usar arquivos setup.cfg ou pyproject.toml 
-	•	Nunca definir dependências em múltiplos locais
-	•	Nunca omitir informações de versão nas declarações de dependências
+- **Não usar** pyproject.toml, apenas o setup.py é permitido.
+- **Não usar** ou setup.cfg neste projeto, apenas o setup.py é permitido.
+- **Não instalar** pacotes diretamente em scripts ou Makefile, apenas o setup.py é permitido.
+- **Não usar** arquivos setup.cfg ou pyproject.toml, apenas o setup.py é permitido.
+- **Não definir** dependências em múltiplos locais, apenas o setup.py é permitido.
+
 
