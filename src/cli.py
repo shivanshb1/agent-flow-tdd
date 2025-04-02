@@ -10,12 +10,9 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from src.core.utils import (
-    ModelManager,
-    get_env_status,
-    log_error,
-    validate_env,
-)
+from src.core.utils.model_manager import ModelManager
+from src.core.utils.env import get_env_status, validate_env
+from src.core.utils.logger import log_error
 from src.app import AgentOrchestrator
 
 app = typer.Typer(help="Agent Flow TDD - Framework para automação de fluxo de features TDD")
