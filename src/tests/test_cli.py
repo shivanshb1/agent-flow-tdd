@@ -3,11 +3,12 @@ Testes para o módulo CLI.
 """
 import json
 from unittest.mock import Mock, patch, MagicMock
+import os
 
 import pytest
 from typer.testing import CliRunner
 
-from src.cli import app
+from src.cli import app, mcp
 from src.core.utils import ModelManager, get_env_status, validate_env
 from src.app import AgentOrchestrator
 
@@ -116,33 +117,35 @@ def test_status_command_error(mock_model_manager, mock_get_env_status):
     assert result.exit_code == 0  # Typer captura a exceção
     assert "Erro ao obter status" in result.stdout
 
-def test_mcp_command_feature(mock_orchestrator):
+def test_mcp_command_feature(mock_orchestrator, capsys, monkeypatch):
     """Testa o comando MCP processando uma feature."""
     # Setup
     mock_orchestrator.handle_input.return_value = {"feature": "Login"}
     input_data = {"type": "feature", "prompt": "Criar login"}
     
     # Simula entrada stdin
-    with patch("sys.stdin") as mock_stdin:
-        mock_stdin.readline.side_effect = [
-            json.dumps(input_data) + "\n",
-            ""  # EOF
-        ]
+    input_lines = [json.dumps(input_data) + "\n", ""]
+    input_iter = iter(input_lines)
+    monkeypatch.setattr("sys.stdin.readline", lambda: next(input_iter))
+    
+    with patch.dict(os.environ, {"OPENAI_KEY": "test-key"}), \
+         patch("src.cli.get_orchestrator", return_value=mock_orchestrator):
         
         # Execução
-        result = runner.invoke(app, ["mcp"])
+        mcp()
+        captured = capsys.readouterr()
         
         # Verificações
-        assert result.exit_code == 0
         mock_orchestrator.handle_input.assert_called_once_with(input_data["prompt"])
-        assert json.loads(result.stdout.splitlines()[0]) == {
+        assert json.loads(captured.out.splitlines()[0]) == {
             "status": "success",
             "result": {"feature": "Login"}
         }
 
-def test_mcp_command_status(mock_get_env_status, mock_model_manager):
+def test_mcp_command_status(mock_get_env_status, mock_model_manager, mock_orchestrator, capsys, monkeypatch):
     """Testa o comando MCP obtendo status."""
     # Setup
+    mock_orchestrator.model_manager = mock_model_manager
     mock_model_manager.get_available_models.return_value = ["gpt-4"]
     mock_get_env_status.return_value = {
         "required": {"OPENAI_KEY": True},
@@ -151,20 +154,21 @@ def test_mcp_command_status(mock_get_env_status, mock_model_manager):
     input_data = {"type": "status"}
     
     # Simula entrada stdin
-    with patch("sys.stdin") as mock_stdin:
-        mock_stdin.readline.side_effect = [
-            json.dumps(input_data) + "\n",
-            ""  # EOF
-        ]
+    input_lines = [json.dumps(input_data) + "\n", ""]
+    input_iter = iter(input_lines)
+    monkeypatch.setattr("sys.stdin.readline", lambda: next(input_iter))
+    
+    with patch("src.cli.get_env_status", return_value=mock_get_env_status.return_value), \
+         patch.dict(os.environ, {"OPENAI_KEY": "test-key"}), \
+         patch("src.cli.get_orchestrator", return_value=mock_orchestrator):
         
         # Execução
-        result = runner.invoke(app, ["mcp"])
+        mcp()
+        captured = capsys.readouterr()
         
         # Verificações
-        assert result.exit_code == 0
-        mock_get_env_status.assert_called_once()
         mock_model_manager.get_available_models.assert_called_once()
-        assert json.loads(result.stdout.splitlines()[0]) == {
+        assert json.loads(captured.out.splitlines()[0]) == {
             "status": "success",
             "result": {
                 "env": mock_get_env_status.return_value,
@@ -221,7 +225,7 @@ def test_feature_command_address_requirements(mock_model_manager, mock_orchestra
     mock_orchestrator.handle_input.assert_called_once_with(prompt)
     assert "Feature processada com sucesso!" in result.stdout
 
-def test_mcp_command_address_requirements(mock_orchestrator):
+def test_mcp_command_address_requirements(mock_orchestrator, capsys, monkeypatch):
     """Testa o comando MCP para requisitos de endereço."""
     # Setup
     expected_result = {
@@ -270,19 +274,20 @@ def test_mcp_command_address_requirements(mock_orchestrator):
     }
     
     # Simula entrada stdin
-    with patch("sys.stdin") as mock_stdin:
-        mock_stdin.readline.side_effect = [
-            json.dumps(input_data) + "\n",
-            ""  # EOF
-        ]
+    input_lines = [json.dumps(input_data) + "\n", ""]
+    input_iter = iter(input_lines)
+    monkeypatch.setattr("sys.stdin.readline", lambda: next(input_iter))
+    
+    with patch.dict(os.environ, {"OPENAI_KEY": "test-key"}), \
+         patch("src.cli.get_orchestrator", return_value=mock_orchestrator):
         
         # Execução
-        result = runner.invoke(app, ["mcp"])
+        mcp()
+        captured = capsys.readouterr()
         
         # Verificações
-        assert result.exit_code == 0
         mock_orchestrator.handle_input.assert_called_once_with(input_data["prompt"])
-        assert json.loads(result.stdout.splitlines()[0]) == {
+        assert json.loads(captured.out.splitlines()[0]) == {
             "status": "success",
             "result": expected_result
         } 

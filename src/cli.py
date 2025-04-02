@@ -211,8 +211,7 @@ def mcp() -> None:
                     sys.stdout.write(json.dumps(response) + "\n")
                 elif command["type"] == "status":
                     env_status = get_env_status()
-                    model_manager = ModelManager()
-                    available_models = model_manager.get_available_models()
+                    available_models = orchestrator.model_manager.get_available_models()
                     response = {
                         "status": "success",
                         "result": {
