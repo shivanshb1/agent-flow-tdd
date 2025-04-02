@@ -2,6 +2,8 @@
 CLI principal do sistema.
 """
 import asyncio
+import json
+import sys
 from typing import Optional
 
 import typer
@@ -14,10 +16,11 @@ from src.core.utils import (
     log_error,
     validate_env,
 )
+from src.app import AgentOrchestrator
 
 app = typer.Typer(help="Agent Flow TDD - Framework para automação de fluxo de features TDD")
 console = Console()
-
+orchestrator = AgentOrchestrator()
 
 @app.command()
 def feature(
@@ -70,6 +73,12 @@ def feature(
         "-mt",
         help="Número máximo de tokens para geração de texto",
     ),
+    output_format: str = typer.Option(
+        "json",
+        "--format",
+        "-fmt",
+        help="Formato de saída (json ou markdown)",
+    ),
 ) -> None:
     """
     Cria uma nova feature usando o fluxo completo de agentes.
@@ -78,18 +87,34 @@ def feature(
         # Valida variáveis de ambiente
         validate_env()
 
-        # Inicia...
+        # Configura o modelo com os parâmetros fornecidos
+        model_manager = ModelManager()
+        model_manager.configure(
+            model=model,
+            elevation_model=elevation_model,
+            force=force,
+            api_key=api_key,
+            timeout=timeout,
+            max_retries=max_retries,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
 
-        # Executa o fluxo
-        result = asyncio.run(agent.execute(prompt=prompt))
+        # Processa a feature usando o orquestrador
+        result = orchestrator.handle_input(prompt)
 
-        # Exibe o resultado
-        console.print("[green]Feature criada com sucesso![/green]")
-        console.print(result)
+        # Formata a saída de acordo com o formato solicitado
+        if output_format == "markdown":
+            formatted_result = orchestrator.visualizer.visualize(json.dumps(result), "markdown")
+            console.print(formatted_result)
+        else:
+            console.print(json.dumps(result, indent=2))
+
+        console.print("[green]Feature processada com sucesso![/green]")
 
     except Exception as e:
         log_error(e)
-        console.print(f"[red]Erro ao criar feature: {str(e)}[/red]")
+        console.print(f"[red]Erro ao processar feature: {str(e)}[/red]")
 
 @app.command()
 def status() -> None:
@@ -126,6 +151,12 @@ def status() -> None:
         # Adiciona modelos disponíveis
         table.add_row("Modelos Disponíveis", ", ".join(available_models))
 
+        # Adiciona status do orquestrador
+        table.add_row(
+            "Orquestrador",
+            "[green]Ativo[/green]" if orchestrator else "[red]Inativo[/red]"
+        )
+
         # Exibe a tabela
         console.print(table)
 
@@ -133,6 +164,72 @@ def status() -> None:
         log_error(e)
         console.print(f"[red]Erro ao obter status: {str(e)}[/red]")
 
+@app.command()
+def mcp() -> None:
+    """
+    Inicia o modo MCP via stdin/stdout.
+    """
+    try:
+        # Desativa saída rich para evitar interferência no protocolo
+        console = Console(file=sys.stderr)
+        console.print("[green]Iniciando modo MCP via stdin/stdout...[/green]")
+        
+        while True:
+            try:
+                # Lê comando da entrada padrão
+                line = sys.stdin.readline()
+                if not line:
+                    break
+                
+                # Processa o comando JSON
+                command = json.loads(line)
+                
+                # Executa o comando apropriado
+                if command["type"] == "feature":
+                    result = orchestrator.handle_input(command["prompt"])
+                    response = {
+                        "status": "success",
+                        "result": result
+                    }
+                elif command["type"] == "status":
+                    env_status = get_env_status()
+                    model_manager = ModelManager()
+                    response = {
+                        "status": "success",
+                        "result": {
+                            "env": env_status,
+                            "models": model_manager.get_available_models(),
+                            "orchestrator": "active" if orchestrator else "inactive"
+                        }
+                    }
+                else:
+                    response = {
+                        "status": "error",
+                        "error": f"Comando desconhecido: {command['type']}"
+                    }
+                
+                # Envia resposta para stdout
+                print(json.dumps(response))
+                sys.stdout.flush()
+                
+            except json.JSONDecodeError as e:
+                print(json.dumps({
+                    "status": "error",
+                    "error": f"JSON inválido: {str(e)}"
+                }))
+                sys.stdout.flush()
+            except Exception as e:
+                print(json.dumps({
+                    "status": "error",
+                    "error": str(e)
+                }))
+                sys.stdout.flush()
+    
+    except KeyboardInterrupt:
+        console.print("[yellow]Encerrando modo MCP...[/yellow]")
+    except Exception as e:
+        log_error(e)
+        console.print(f"[red]Erro no modo MCP: {str(e)}[/red]")
 
 if __name__ == "__main__":
     app()

@@ -50,6 +50,7 @@ setup(
         "requests>=2.31.0",
         "tenacity>=8.2.0",
         "cachetools>=5.3.0",
+        "flask>=3.0.0",
         # Ferramentas de desenvolvimento
         "pytest>=7.0.0",
         "pytest-cov>=4.1.0",
