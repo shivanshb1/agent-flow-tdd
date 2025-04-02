@@ -29,7 +29,8 @@ def mock_orchestrator():
     orchestrator.visualizer = MagicMock()
     orchestrator.visualizer.visualize.return_value = "# Markdown Output"
     
-    with patch("src.cli.get_orchestrator", return_value=orchestrator):
+    with patch("src.cli.get_orchestrator", autospec=True) as mock:
+        mock.return_value = orchestrator
         yield orchestrator
 
 @pytest.fixture
