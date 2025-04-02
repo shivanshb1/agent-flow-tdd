@@ -2,6 +2,7 @@ import openai
 import time
 from typing import List, Dict, Any
 import json
+from openai import OpenAI
 
 class Message:
     def __init__(self, content: str, source: str, timestamp: float):
@@ -21,6 +22,7 @@ class ConversationHistory:
 
 class TriageAgent:
     def __init__(self):
+        self.client = OpenAI()
         self.system_prompt = """
         Você é um roteador especializado em desenvolvimento de software. Sua tarefa é analisar a conversa e decidir quais agentes devem ser acionados:
         - Pré-processamento: Quando precisar clarificar requisitos ou processar dados
@@ -31,7 +33,7 @@ class TriageAgent:
         """
     
     def route(self, context: str) -> List[str]:
-        response = openai.ChatCompletion.create(
+        response = self.client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": self.system_prompt},
@@ -43,6 +45,7 @@ class TriageAgent:
 
 class DeterministicPreprocessingAgent:
     def __init__(self):
+        self.client = OpenAI()
         self.system_prompt = """
         Você é um especialista em engenharia de requisitos. Suas tarefas:
         1. Limpeza: Remover ambiguidades e subjetividades
@@ -53,7 +56,7 @@ class DeterministicPreprocessingAgent:
         """
     
     def process(self, input_text: str, context: str) -> str:
-        response = openai.ChatCompletion.create(
+        response = self.client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": self.system_prompt},
@@ -65,6 +68,7 @@ class DeterministicPreprocessingAgent:
 
 class AnalyticalAnalysisAgent:
     def __init__(self):
+        self.client = OpenAI()
         self.system_prompt = """
         Você é um arquiteto de software experiente. Realize:
         1. Análise Estatística: Quantidade/Complexidade de requisitos
@@ -75,7 +79,7 @@ class AnalyticalAnalysisAgent:
         """
     
     def analyze(self, processed_data: str, context: str) -> str:
-        response = openai.ChatCompletion.create(
+        response = self.client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": self.system_prompt},
@@ -87,6 +91,7 @@ class AnalyticalAnalysisAgent:
 
 class ToolVisualizationAgent:
     def __init__(self):
+        self.client = OpenAI()
         self.markdown_prompt = """
         Transforme a análise em markdown com:
         - Seções hierárquicas
@@ -109,7 +114,7 @@ class ToolVisualizationAgent:
         else:
             prompt = self.json_prompt
         
-        response = openai.ChatCompletion.create(
+        response = self.client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": prompt},
@@ -162,7 +167,8 @@ class AgentOrchestrator:
         return json.loads(final_output)
 
 # Uso
-orchestrator = AgentOrchestrator()
-user_prompt = "Preciso de um sistema de login com autenticação de dois fatores"
-result = orchestrator.handle_input(user_prompt)
-print("Resultado Final:", json.dumps(result, indent=2))
+if __name__ == "__main__":
+    orchestrator = AgentOrchestrator()
+    user_prompt = "Preciso de um sistema de login com autenticação de dois fatores"
+    result = orchestrator.handle_input(user_prompt)
+    print("Resultado Final:", json.dumps(result, indent=2))
