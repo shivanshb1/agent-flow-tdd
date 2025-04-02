@@ -1,6 +1,6 @@
-# Guia de Contribuição — AgentFlowCraft
+# Guia de Contribuição — AgentFlowTDD
 
-Obrigado por se interessar em contribuir com o AgentFlowCraft! 🎉 Este documento descreve como você pode ajudar o projeto, seja reportando problemas, sugerindo melhorias ou enviando código.
+Obrigado por se interessar em contribuir com o AgentFlowTDD! 🎉 Este documento descreve como você pode ajudar o projeto, seja reportando problemas, sugerindo melhorias ou enviando código.
 
 ---
 

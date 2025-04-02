@@ -51,7 +51,7 @@ def main():
         logger.debug(f"Argumentos processados: output={args.output}")
         
         console = Console(record=True)
-        root_tree = Tree("📦 [bold blue]agent-flow-craft[/bold blue]")
+        root_tree = Tree("📦 [bold blue]agent-flow-tdd[/bold blue]")
         
         build_tree(".", root_tree)
         logger.info("Árvore construída com sucesso")

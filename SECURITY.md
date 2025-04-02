@@ -1,6 +1,6 @@
 # Política de Segurança
 
-Nós levamos a sério a segurança do **agent-flow-craft**. Para relatar vulnerabilidades de forma responsável, siga estas diretrizes:
+Nós levamos a sério a segurança do **agent-flow-tdd**. Para relatar vulnerabilidades de forma responsável, siga estas diretrizes:
 
 - **Relato Privado**: Se você descobriu uma potencial vulnerabilidade de segurança, **não a relate em um fórum público** (como issues ou discussões abertas). Em vez disso, entre em contato privadamente com a equipe de mantenedores.
 
@@ -10,4 +10,4 @@ Nós levamos a sério a segurança do **agent-flow-craft**. Para relatar vulnera
 
 - **Resolução e Divulgação**: Trabalharemos para corrigir a vulnerabilidade assim que confirmada. Após solucionada e lançada a correção, iremos coordenar uma **divulgação responsável** da falha. Isso normalmente envolve publicar um aviso de segurança nos repositórios apropriados e creditar você ou a equipe que relatou o problema (a menos que prefira anonimato).
 
-Agradecemos por ajudar a tornar o **agent-flow-craft** mais seguro! Sua colaboração responsável permite proteger melhor toda a comunidade de usuários do projeto.
+Agradecemos por ajudar a tornar o **agent-flow-tdd** mais seguro! Sua colaboração responsável permite proteger melhor toda a comunidade de usuários do projeto.

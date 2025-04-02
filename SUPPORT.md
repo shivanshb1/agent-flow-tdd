@@ -1,6 +1,6 @@
 # Como obter suporte
 
-Obrigado por usar o **agent-flow-craft**! Se você precisa de ajuda ou tem dúvidas sobre o projeto, siga as orientações abaixo para encontrar suporte:
+Obrigado por usar o **agent-flow-tdd**! Se você precisa de ajuda ou tem dúvidas sobre o projeto, siga as orientações abaixo para encontrar suporte:
 
 - **Documentação e FAQ**: Consulte o README e a documentação do projeto (caso disponível) para verificar se sua dúvida já foi respondida. Esses recursos contêm tutoriais de uso, exemplos e respostas para perguntas comuns.
 

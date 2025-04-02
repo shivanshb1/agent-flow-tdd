@@ -1,4 +1,4 @@
-# Código de Conduta do AgentFlowCraft
+# Código de Conduta do AgentFlowTDD
 
 ## 📜 Compromisso
 
@@ -32,6 +32,6 @@ Casos de comportamento abusivo, de assédio ou inaceitável podem ser reportados
 
 ## 📬 Contato
 
-Para dúvidas ou denúncias, envie um e-mail para **contato@agentflowcraft.dev** (endereço a ser confirmado).
+Para dúvidas ou denúncias, envie um e-mail para **contato@agentflowtdd.dev** (endereço a ser confirmado).
 
 ## 🙌 Obrigado por ajudar a manter este ambiente acolhedor, colaborativo e respeitoso!
