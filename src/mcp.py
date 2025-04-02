@@ -110,9 +110,9 @@ class PromptManager:
 
 class LLMProvider:
     def __init__(self):
-        self.api_key = os.getenv("OPENAI_API_KEY")
+        self.api_key = os.getenv("OPENAI_KEY")
         if not self.api_key:
-            logger.warning("OPENAI_API_KEY não encontrada nas variáveis de ambiente")
+            logger.warning("OPENAI_KEY não encontrada nas variáveis de ambiente")
         self.client = OpenAI(api_key=self.api_key)
         
     def generate(self, prompt: str, options: Dict[str, Any]) -> Optional[str]:

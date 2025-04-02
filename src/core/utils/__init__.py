@@ -12,7 +12,7 @@ class ModelManager:
     def __init__(self):
         self.model = "gpt-3.5-turbo"
         self.temperature = 0.7
-        self.api_key = os.getenv("OPENAI_API_KEY")
+        self.api_key = os.getenv("OPENAI_KEY")
         logger.info("ModelManager inicializado")
         
     def configure(self, model: Optional[str] = None, temperature: Optional[float] = None) -> None:
@@ -33,7 +33,7 @@ class ModelManager:
 def get_env_status() -> Dict[str, bool]:
     """Verifica o status das variáveis de ambiente necessárias."""
     return {
-        "OPENAI_API_KEY": bool(os.getenv("OPENAI_API_KEY"))
+        "OPENAI_KEY": bool(os.getenv("OPENAI_KEY"))
     }
 
 def validate_env() -> bool:
