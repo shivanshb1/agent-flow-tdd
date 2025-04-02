@@ -1,0 +1,66 @@
+name: Atualizar índice da documentação
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+  push:
+    branches:
+      - '**'  # Executa em qualquer branch
+
+jobs:
+  update-docs-index:
+    runs-on: ubuntu-latest
+    # Adiciona permissão para escrita no conteúdo do repositório
+    permissions:
+      contents: write
+    steps:
+      - name: Clonar o repositório
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Clona todo o histórico para garantir acesso completo
+
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Configurar ambiente Python
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml loguru
+          # Instala o próprio pacote em modo de desenvolvimento
+          pip install -e .
+
+      - name: Executar script para gerar índice
+        run: |
+          # Adiciona o diretório src ao PYTHONPATH
+          export PYTHONPATH=$PYTHONPATH:$(pwd):$(pwd)/src
+          python src/scripts/util_generate_docs_index.py --output docs/README.md
+        
+      - name: Verificar alterações
+        id: verify_changes
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit e push de atualização
+        if: steps.verify_changes.outputs.changes == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/README.md
+          git commit -m "docs: atualiza índice de documentação automaticamente"
+          
+          # Configura autenticação com o GITHUB_TOKEN
+          git remote set-url origin https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+          
+          # Se for PR fechado, faz push para a branch destino
+          if [[ "${{ github.event_name }}" == "pull_request" && "${{ github.event.action }}" == "closed" ]]; then
+            git push origin HEAD:${{ github.event.pull_request.base.ref }}
+          else
+            # Caso contrário, faz push para a branch atual
+            git push
+          fi

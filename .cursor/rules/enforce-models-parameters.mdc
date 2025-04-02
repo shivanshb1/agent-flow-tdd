@@ -1,0 +1,10 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Regras para parâmetro de modelos
+
+- Sempre criar entradas para parâmetro de modelo, permitindo que o usuário modifique os parâmetros conforme o modelo escolhido.
+- Nunca criar valores fixos (hard code) para variáveis que armazenam parâmetros de modelos, permitindo que usuário modifique as preferências na execução do agente.

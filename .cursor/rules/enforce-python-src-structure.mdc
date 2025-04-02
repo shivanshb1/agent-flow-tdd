@@ -1,0 +1,39 @@
+---
+description: Regra para manter a estrutura de código Python dentro do diretório src
+globs: 
+alwaysApply: true
+---
+
+# Regra: Conservação da Estrutura Python em src
+
+Descrição:
+Todos os arquivos Python devem seguir rigorosamente a estrutura de diretórios existente dentro do diretório src, preservando o padrão de nomenclatura e organização já estabelecido.
+
+⸻
+
+✅ Requisitos Obrigatórios
+	•	Todo código Python novo deve ser colocado dentro do diretório `src/` ou seus subdiretórios existentes:
+		•	src/core/ - para funcionalidades centrais
+		•	src/tests/ - para testes
+		•	src/configs/ - para configurações
+		•	src/scripts/ - para scripts de utilitários
+	•	É proibido criar novos diretórios na raiz de `src/` sem autorização expressa.
+	•	Todo arquivo Python deve seguir o padrão de nomenclatura já estabelecido em cada módulo.
+
+⸻
+
+🔒 Padrões de Nomenclatura
+	•	Nomes de arquivos devem usar snake_case (letras minúsculas com underscores)
+	•	Classes devem seguir PascalCase
+	•	Funções e métodos devem seguir snake_case
+	•	Constantes devem ser em MAIÚSCULAS_COM_UNDERSCORES
+	•	Todos os nomes devem ser descritivos e seguir o padrão dos arquivos existentes no mesmo diretório
+
+⸻
+
+❌ Práticas Proibidas
+	•	Criar arquivos Python fora do diretório `src/`
+	•	Criar novos subdiretórios que não existam no esquema atual
+	•	Usar convenções de nomenclatura diferentes das já estabelecidas
+	•	Misturar responsabilidades entre diferentes subdiretórios (ex: colocar código de aplicação em src/tests/)
+	•	Ignorar a estrutura de pacotes existente com arquivos __init__.py 

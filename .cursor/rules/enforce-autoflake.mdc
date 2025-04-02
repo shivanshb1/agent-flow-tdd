@@ -1,0 +1,16 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Regra 2: Executar Autoflake após cada execução
+
+Descrição:
+Ao final de todas as execuções que alterem arquivos Python, deve ser executado o comando autoflake com os seguintes parâmetros para limpar código morto e imports não utilizados:
+
+autoflake --remove-all-unused-imports --remove-unused-variables --in-place --recursive .
+
+Objetivo:
+Manter o código limpo, enxuto e livre de lixo gerado por alterações/refatorações. Essa limpeza deve ser parte obrigatória do pós-processamento.
+
+- Aplica-se a qualquer alteração realizada por agentes, reflectors, scripts ou manutenções manuais orientadas por IA.

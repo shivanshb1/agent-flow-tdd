@@ -1,0 +1,45 @@
+name: Criar tag automática
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar o repositório
+        uses: actions/checkout@v3
+
+      - name: Configurar Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Obter última tag
+        id: get_tag
+        run: |
+          git fetch --tags
+          TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+          echo "ultima_tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Criar próxima tag
+        id: next_tag
+        run: |
+          if [ -z "${{ steps.get_tag.outputs.ultima_tag }}" ]; then
+            NEXT_TAG="v0.1.0"
+          else
+            VERSION_PARTS=($(echo "${{ steps.get_tag.outputs.ultima_tag }}" | tr "." " "))
+            MAJOR=$(echo ${VERSION_PARTS[0]} | tr -d 'v')
+            MINOR=${VERSION_PARTS[1]}
+            PATCH=${VERSION_PARTS[2]}
+            PATCH=$((PATCH + 1))
+            NEXT_TAG="v$MAJOR.$MINOR.$PATCH"
+          fi
+          echo "next_tag=$NEXT_TAG" >> $GITHUB_OUTPUT
+
+      - name: Criar nova tag no repositório
+        run: |
+          git tag ${{ steps.next_tag.outputs.next_tag }}
+          git push origin ${{ steps.next_tag.outputs.next_tag }}

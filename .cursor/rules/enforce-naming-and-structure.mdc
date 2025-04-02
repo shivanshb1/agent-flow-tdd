@@ -1,0 +1,29 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Regra para nomenclatura e estrutura de arquivos
+
+	1.	Não utilize os termos test, tests, teste, testes em nomes de arquivos ou diretórios, exceto quando se referirem a testes de software reais, como:
+	•	Testes unitários
+	•	Testes de integração
+	•	Testes de qualidade (QA)
+	•	Testes end-to-end (e2e)
+	•	Testes funcionais
+❌ Exemplos proibidos:
+	•	src/apps/mdc/tests/setup.py (incorreto: não é um teste)
+	•	tests/helpers.py (incorreto se não for um teste)
+✅ Exemplos permitidos:
+	•	src/tests/test_feature_creation_agent.py
+	•	src/tests/test_mcp_e2e.py
+	2.	Se um arquivo não for um teste de software, utilize uma nomenclatura descritiva do papel real do arquivo, como: setup, initialize, generate, migrate, etc
+	3.	Nunca crie novos diretórios fora do padrão atual do projeto, sem permissão explícita.
+Utilize apenas os diretórios existentes.
+
+	4.	Ao criar novos arquivos, sempre mantenha a organização e os padrões existentes:
+	•	Respeite a estrutura de pacotes
+	•	Crie __init__.py sempre que necessário
+	•	Reutilize padrões já existentes em nomeação e localização
+	•	Utilize comentários de módulo com propósito do arquivo

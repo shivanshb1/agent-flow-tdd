@@ -1,0 +1,38 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Regra: Execução Obrigatória de Testes E2E
+
+Descrição:
+Após qualquer alteração em scripts ou código fonte do projeto, é obrigatória a execução dos testes end-to-end (e2e) para garantir que as mudanças não quebraram a funcionalidade existente.
+
+⸻
+
+✅ Requisitos
+	•	Executar testes e2e após:
+		•	Modificações em arquivos Python dentro de src/
+		•	Alterações em scripts de automação
+		•	Mudanças em configurações do projeto
+		•	Atualizações de dependências
+	•	Os testes devem ser executados através do comando make definido para testes e2e
+	•	Todos os testes devem passar antes de considerar a mudança como concluída
+
+⸻
+
+🔄 Processo de Execução
+	•	Usar o comando padrão do projeto para testes e2e
+	•	Aguardar a conclusão completa da suíte de testes
+	•	Verificar e analisar os resultados dos testes
+	•	Em caso de falhas:
+		•	Revisar as mudanças realizadas
+		•	Corrigir os problemas identificados
+		•	Executar os testes novamente
+
+⸻
+
+❌ Práticas Proibidas
+	•	Pular a execução dos testes e2e após mudanças
+	•	Ignorar falhas nos testes
+	•	Considerar uma mudança como concluída sem a execução bem-sucedida dos testes 

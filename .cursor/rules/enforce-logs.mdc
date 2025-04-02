@@ -1,0 +1,125 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Regras de Logging para o Projeto
+
+## Objetivo
+Garantir que todas as funções Python geradas pela IA incluam logs automatizados seguindo o padrão do projeto, com:
+- Contexto relevante
+- Níveis apropriados de severidade
+- Rastreabilidade completa
+
+## Regras Obrigatórias
+
+1. **Estrutura Básica por Função**:
+   ```python
+   def minha_funcao(param1, param2):
+       logger = logging.getLogger(__name__)
+       logger.info(f"INÍCIO - {my_function.__name__} | Parâmetros: param1={param1[:100]}...")
+       
+       try:
+           # Corpo da função
+           logger.debug("Detalhe intermediário relevante")
+           
+           return resultado
+       except Exception as e:
+           logger.error(f"FALHA - {my_function.__name__} | Erro: {str(e)}", exc_info=True)
+           raise
+       finally:
+           logger.info(f"FIM - {my_function.__name__} | Tempo execução: ...ms")
+   ```
+
+2. **Requisitos por Nível de Log**:
+   - `INFO`: Registrar sempre:
+     - Entrada/saída da função
+     - Parâmetros não sensíveis (truncar dados grandes)
+     - Tempo de execução (opcional)
+   - `DEBUG`: Valores intermediários, estados de flags
+   - `ERROR`: Todas as exceções com stacktrace (`exc_info=True`)
+
+3. **Formato Padrão**:
+   ```
+   "NÍVEL - Contexto | Mensagem [Dados Relevantes]"
+   ```
+   Exemplo:
+   `INFO - database.connect | Conexão estabelecida [host=127.0.0.1, timeout=5s]`
+
+4. **Variáveis Proibidas**:
+   - Nunca logar:
+     ```python
+     # BAD
+     logger.info(f"Senha recebida: {password}")
+     
+     # GOOD
+     logger.info("Credenciais recebidas [user=admin]")
+     ```
+
+## Regras de Implementação
+
+1. **Decorador Padrão (Opcional)**:
+   ```python
+   @log_execution
+   def funcao_decorada():
+       # Implementação...
+   ```
+
+2. **Variáveis de Ambiente**:
+   - Respeitar `LOG_LEVEL` definido no projeto
+   - Usar `logger.setLevel(os.getenv('LOG_LEVEL', 'INFO'))`
+
+3. **Exceções Customizadas**:
+   ```python
+   class MeuErro(Exception):
+       def __init__(self, msg, context):
+           logger.error(f"ERRO CUSTOMIZADO | {msg} | Contexto: {context}")
+           super().__init__(msg)
+   ```
+
+## Exemplo Completo
+
+```python
+import logging
+from functools import wraps
+
+logger = logging.getLogger(__name__)
+
+def log_execution(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        logger.info(f"EXECUTANDO {func.__name__} | Args: {args} | Kwargs: {kwargs}")
+        try:
+            result = func(*args, **kwargs)
+            logger.info(f"SUCESSO {func.__name__} | Retorno: {str(result)[:200]}...")
+            return result
+        except Exception as e:
+            logger.error(f"ERRO {func.__name__} | {type(e).__name__}: {str(e)}", exc_info=True)
+            raise
+    return wrapper
+```
+
+## Validação
+A IA deve sempre:
+1. Incluir logs antes/after em blocos try-except
+2. Truncar dados sensíveis ou muito longos
+3. Usar `__name__` para namespace de logs
+4. Manter consistência com o formato especificado
+```
+
+---
+
+### Como Funciona na Prática:
+1. Quando o Cursor gerar código:
+   - Automaticamente adicionará os blocos de log
+   - Seguirá o padrão de formatação
+   - Incluirá os níveis apropriados
+
+2. Para customização:
+   - Adicione `@log_execution` em funções críticas
+   - Ajuste níveis via variáveis de ambiente
+
+3. Dados sensíveis:
+   - A IA detectará padrões como `password=` e omitirá valores
+

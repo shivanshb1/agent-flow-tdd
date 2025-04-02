@@ -1,0 +1,30 @@
+---
+description: Regra para garantir que operações Git sejam sempre manuais
+globs: 
+alwaysApply: true
+---
+# Regra: Proibição de Operações Git Automáticas
+
+Descrição:
+As mudanças no código não devem ser submetidas automaticamente para o repositório git por comandos automáticos. Esta regra proíbe o uso de comandos git como commit, pull ou push em scripts automatizados ou agentes.
+
+⸻
+
+✅ Objetivo
+	•	Garantir que o usuário possa escolher manualmente quais mudanças realizadas automaticamente devem ser adicionadas ao controle de versões.
+	•	Permitir a revisão de código antes do commit para repositórios.
+	•	Evitar submissões acidentais de código não revisado.
+
+⸻
+
+❌ Proibições
+	•	Scripts automatizados NÃO devem executar comandos `git commit`, `git push` ou `git pull`.
+	•	Agentes de IA NÃO devem sugerir a execução automática de comandos Git de submissão.
+	•	Sistemas de automação devem parar antes de enviar mudanças para repositórios remotos.
+
+⸻
+
+✓ Procedimento Correto
+	•	Ferramentas e scripts devem mostrar um resumo das alterações realizadas.
+	•	O usuário deve revisar as mudanças manualmente usando `git status` e `git diff`.
+	•	Após revisão, o usuário decide quais arquivos adicionar com `git add` e quando fazer o commit. 

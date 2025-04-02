@@ -1,0 +1,59 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Regra: Restrições de Modificações em Testes e Código-Fonte
+
+Descrição:
+Durante a execução e correção de testes, deve-se priorizar a modificação do próprio teste ao invés de alterar o código-fonte da aplicação. Quando necessário alterar o código-fonte, existem restrições específicas que devem ser seguidas.
+
+⸻
+
+✅ Prioridade de Modificações
+1. Primeira Ação:
+	•	Ajustar o próprio teste para corrigir falhas
+	•	Modificar apenas a lógica interna do teste
+	•	Atualizar asserções e verificações
+	•	Corrigir mock objects e fixtures
+
+2. Segunda Ação (apenas se a primeira não resolver):
+	•	Modificar código-fonte respeitando restrições
+	•	Manter estrutura existente
+	•	Preservar interfaces públicas
+
+⸻
+
+❌ Modificações Proibidas sem Autorização Explícita
+Em Código-Fonte:
+	•	Criar novos arquivos
+	•	Renomear arquivos existentes
+	•	Modificar estrutura de diretórios
+	•	Adicionar novos parâmetros em funções/métodos
+	•	Alterar assinaturas de métodos existentes
+
+Em Scripts e Makefiles:
+	•	Criar novos comandos
+	•	Adicionar novos parâmetros
+	•	Modificar nomes de parâmetros existentes
+	•	Alterar estrutura de execução de comandos
+	•	Modificar fluxo de automação existente
+
+⸻
+
+🔄 Processo de Exceção
+Quando for absolutamente necessário realizar qualquer modificação proibida:
+1. Interromper o processo
+2. Documentar a necessidade da mudança
+3. Questionar explicitamente o usuário
+4. Aguardar autorização formal
+5. Proceder apenas após aprovação
+
+⸻
+
+✅ Práticas Permitidas
+	•	Correções de bugs que não alterem interfaces
+	•	Otimizações internas de código
+	•	Refatorações que preservem APIs públicas
+	•	Ajustes em documentação inline
+	•	Melhorias em mensagens de erro/log 

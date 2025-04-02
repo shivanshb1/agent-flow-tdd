@@ -1,0 +1,18 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+
+# Regra 1: Refatorações apenas com Rope
+
+Descrição:
+Todas as operações de refatoração (como renomeações, extrações de função/método, movimentação de arquivos ou classes, etc.) devem ser realizadas exclusivamente utilizando a biblioteca Rope, respeitando seu modelo de análise de escopo e segurança.
+
+Objetivo:
+Evitar manipulações manuais ou edições diretas nos arquivos de código, garantindo que as mudanças sejam semanticamente corretas e seguras.
+
+
+- Obrigatório para todos os reflectors ou comandos de refactor no projeto.
+

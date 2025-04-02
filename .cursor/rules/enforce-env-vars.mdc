@@ -1,0 +1,12 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Regras para variáveis de ambiente
+
+Para variáveis de ambiente que contenham informações sensíveis como chaves tokem ou informações de credenciais:
+- Nunca usar arquivos .env neste projeto.
+- Sempre recuperar as variáveis de ambiente de args ou os.environ.get
+- Nunca recuperar variáveis de ambiente de arquivos ou outras origens que não sejam args ou os.environ.get

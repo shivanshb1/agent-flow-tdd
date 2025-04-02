@@ -1,0 +1,127 @@
+---
+description: Regra para operações de arquivos durante refatoração
+globs: 
+alwaysApply: true
+---
+
+# Regra para Gestão de Arquivo no Refactory
+
+## Objetivo
+Garantir um gerenciamento adequado de arquivos e diretórios durante operações de renomeação e movimentação, mantendo o repositório organizado e prevenindo a permanência de arquivos antigos ou diretórios vazios.
+
+## Requisitos Obrigatórios
+
+1. **Backup de Arquivos Originais**:
+   - Todos os arquivos originais que serão renomeados ou movidos devem ser copiados para um diretório `bak/` na raiz do projeto.
+   - A estrutura de diretórios original deve ser preservada dentro de `bak/`.
+   - Exemplo:
+     ```
+     # Ao mover ou renomear o arquivo:
+     src/components/Button.js → src/components/ui/Button.js
+     
+     # Deve criar:
+     bak/src/components/Button.js
+     ```
+
+2. **Limpeza de Diretórios Vazios**:
+   - Após qualquer operação de movimentação de arquivos, verificar se o diretório de origem ficou vazio.
+   - Se o diretório estiver vazio, removê-lo automaticamente.
+   - Se um diretório pai ficar vazio após a remoção de um subdiretório, ele também deve ser removido.
+   - Exemplo:
+     ```
+     # Ao mover todos os arquivos:
+     src/utils/*.js → src/helpers/*.js
+     
+     # Se src/utils/ estiver vazio após a operação, removê-lo
+     ```
+
+## Implementação
+
+A implementação deve seguir este padrão:
+
+```python
+def move_with_backup(source_path: str, target_path: str):
+    """
+    Move um arquivo mantendo backup do original.
+    
+    Args:
+        source_path: Caminho de origem do arquivo
+        target_path: Caminho de destino do arquivo
+    """
+    # Criar diretório bak/ se não existir
+    bak_dir = os.path.join(os.getcwd(), "bak")
+    os.makedirs(bak_dir, exist_ok=True)
+    
+    # Criar diretório de backup preservando estrutura
+    rel_path = os.path.relpath(source_path, os.getcwd())
+    backup_path = os.path.join(bak_dir, rel_path)
+    os.makedirs(os.path.dirname(backup_path), exist_ok=True)
+    
+    # Copiar arquivo original para backup
+    shutil.copy2(source_path, backup_path)
+    
+    # Criar diretórios de destino se necessário
+    os.makedirs(os.path.dirname(target_path), exist_ok=True)
+    
+    # Mover/renomear arquivo
+    shutil.move(source_path, target_path)
+    
+    # Verificar e remover diretórios vazios
+    cleanup_empty_dirs(os.path.dirname(source_path))
+
+def cleanup_empty_dirs(directory: str):
+    """
+    Recursivamente remove diretórios vazios.
+    
+    Args:
+        directory: Diretório a verificar e potencialmente remover
+    """
+    if not os.path.exists(directory):
+        return
+        
+    # Não remover a raiz do projeto
+    if os.path.samefile(directory, os.getcwd()):
+        return
+        
+    # Verificar se o diretório está vazio
+    if not os.listdir(directory):
+        os.rmdir(directory)
+        
+        # Recursivamente verificar o diretório pai
+        parent_dir = os.path.dirname(directory)
+        cleanup_empty_dirs(parent_dir)
+```
+
+## Exemplo de Uso (Refactory)
+
+```python
+# Ao implementar operações de renomeação/movimentação no RefactorAgent:
+
+def rename_file(self, old_path: str, new_path: str):
+    """Renomeia um arquivo com backup e limpeza automática."""
+    try:
+        # Utilizar a função que implementa a regra
+        move_with_backup(old_path, new_path)
+        
+        self.logger.info(f"SUCESSO - Arquivo renomeado: {old_path} → {new_path}")
+        self.stats["detailed_changes"].append({
+            "type": "rename_file",
+            "source": old_path,
+            "target": new_path,
+            "backup": os.path.join("bak", os.path.relpath(old_path, self.project_dir))
+        })
+        
+    except Exception as e:
+        self.logger.error(f"FALHA - Erro ao renomear arquivo: {str(e)}", exc_info=True)
+        self.stats["errors"] += 1
+```
+
+## Validação
+
+Quando implementar renomeações ou movimentações de arquivos:
+
+1. Verificar se o diretório `bak/` foi criado na raiz do projeto.
+2. Confirmar que a estrutura de diretórios foi preservada dentro de `bak/`.
+3. Verificar que os arquivos originais foram copiados corretamente para o backup.
+4. Assegurar que diretórios vazios foram removidos após operações de movimentação.
+5. Garantir que a remoção de diretórios vazios é recursiva para diretórios pais. 
