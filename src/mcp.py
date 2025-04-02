@@ -4,11 +4,17 @@ Módulo para lidar com o protocolo MCP (Model Context Protocol).
 """
 import json
 import logging
+import os
 import sys
+import time
 from typing import Optional, Dict, Any
 
 from src.app import AgentOrchestrator
 from src.core.utils import ModelManager
+
+from .prompt import PromptManager
+
+from openai import OpenAI
 
 # Configuração básica de logging
 logging.basicConfig(
@@ -16,7 +22,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler("mcp_server.log")
+        logging.FileHandler("logs/mcp_server.log")
     ]
 )
 
@@ -71,13 +77,80 @@ except ImportError:
             """Processa uma mensagem e retorna uma resposta."""
             raise NotImplementedError()
 
+
+class PromptManager:
+    def __init__(self):
+        self.templates: Dict[str, str] = {}
+        logger.info("PromptManager inicializado")
+        
+    def add_template(self, name: str, template: str) -> None:
+        """Adiciona um novo template de prompt."""
+        self.templates[name] = template
+        logger.info(f"Template '{name}' adicionado")
+        
+    def get_template(self, name: str) -> Optional[str]:
+        """Recupera um template de prompt pelo nome."""
+        template = self.templates.get(name)
+        if not template:
+            logger.warning(f"Template '{name}' não encontrado")
+        return template
+        
+    def format_prompt(self, template_name: str, **kwargs) -> Optional[str]:
+        """Formata um prompt usando um template e variáveis."""
+        template = self.get_template(template_name)
+        if not template:
+            return None
+            
+        try:
+            return template.format(**kwargs)
+        except KeyError as e:
+            logger.error(f"Erro ao formatar prompt: variável {e} não fornecida")
+            return None
+        except Exception as e:
+            logger.error(f"Erro ao formatar prompt: {str(e)}")
+            return None 
+
+class LLMProvider:
+    def __init__(self):
+        self.api_key = os.getenv("OPENAI_API_KEY")
+        if not self.api_key:
+            logger.warning("OPENAI_API_KEY não encontrada nas variáveis de ambiente")
+        self.client = OpenAI(api_key=self.api_key)
+        
+    def generate(self, prompt: str, options: Dict[str, Any]) -> Optional[str]:
+        try:
+            model = options.get("model", "gpt-3.5-turbo")
+            temperature = options.get("temperature", 0.7)
+            format = options.get("format", "json")
+            
+            logger.info(f"Gerando resposta com modelo {model} (temperatura: {temperature})")
+            
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=temperature
+            )
+            
+            content = response.choices[0].message.content
+            
+            if format == "markdown":
+                return content
+            else:
+                return {"content": content, "metadata": {"status": "success"}}
+                
+        except Exception as e:
+            logger.error(f"Erro ao gerar resposta: {str(e)}")
+            return None 
 class MCPHandler:
     """Manipulador do protocolo MCP."""
 
-    def __init__(self):
+    def __init__(self, llm_provider: LLMProvider, prompt_manager: PromptManager):
         """Inicializa o manipulador MCP."""
         self.orchestrator = None
         self.model_manager = ModelManager()
+        self.llm_provider = llm_provider
+        self.prompt_manager = prompt_manager
+        logger.info("MCPHandler inicializado com sucesso")
 
     def initialize(self, api_key: Optional[str] = None):
         """Inicializa o orquestrador com a chave da API."""
@@ -89,87 +162,65 @@ class MCPHandler:
         )
         logger.info("MCPHandler inicializado com sucesso")
 
-    def process_message(self, message: str) -> dict:
+    def process_message(self, message: Dict[str, Any]) -> Optional[str]:
         """Processa uma mensagem recebida."""
         try:
-            logger.info(f"Processando mensagem: {message[:100]}...")
-            data = json.loads(message)
-            content = data.get("content")
-            metadata = data.get("metadata", {})
+            content = message.get("content")
+            metadata = message.get("metadata", {})
             
             if not content:
-                raise ValueError("Mensagem sem conteúdo")
-
-            if not self.orchestrator:
-                raise ValueError("Orquestrador não inicializado")
-
-            # Configura o modelo com as opções fornecidas
-            options = metadata.get("options", {})
-            model = options.get("model", "gpt-3.5-turbo")
-            temperature = options.get("temperature", 0.7)
-            logger.info(f"Configurando modelo: {model} (temperatura: {temperature})")
-            self.orchestrator.model_manager.configure(
-                model=model,
-                temperature=temperature
-            )
-
-            logger.info("Processando entrada com o orquestrador...")
-            result = self.orchestrator.handle_input(content)
+                logger.warning("Mensagem recebida sem conteúdo")
+                return None
+                
+            logger.info(f"Processando mensagem: {content}")
+            logger.info(f"Metadata: {metadata}")
             
-            # Converte para markdown se solicitado
-            output_format = options.get("format", "json")
-            if output_format == "markdown":
-                logger.info("Convertendo resultado para markdown...")
-                result = {
-                    "content": {
-                        "markdown": self.orchestrator.visualizer.visualize(json.dumps(result), "markdown")
-                    }
-                }
-
-            logger.info("Mensagem processada com sucesso")
-            return result
-
+            response = self.llm_provider.generate(content, metadata.get("options", {}))
+            return response
+            
         except Exception as e:
-            logger.error(f"Erro ao processar mensagem: {str(e)}", exc_info=True)
-            return {
-                "content": {"error": str(e)},
-                "metadata": {"status": "error"}
-            }
+            logger.error(f"Erro ao processar mensagem: {str(e)}")
+            return None
 
     def run(self):
         """Executa o manipulador MCP."""
+        pipe_path = "logs/mcp_pipe.log"
+        logger.info(f"Iniciando leitura do arquivo: {pipe_path}")
+        
         try:
-            logger.info("Iniciando servidor MCP...")
-            with open("mcp_pipe", "r") as f:
-                logger.info("Pipe aberto para leitura")
-                while True:
-                    line = f.readline()
-                    if not line:
-                        logger.info("Pipe fechado, encerrando servidor")
-                        break
-
+            # Espera até que o arquivo exista
+            while not os.path.exists(pipe_path):
+                logger.info("Aguardando criação do arquivo...")
+                time.sleep(1)
+            
+            # Lê o conteúdo do arquivo
+            with open(pipe_path, 'r') as f:
+                content = f.read().strip()
+                if content:
                     try:
-                        logger.info("Processando linha recebida...")
-                        result = self.process_message(line)
-                        response = json.dumps(result)
-                        logger.info(f"Enviando resposta: {response[:100]}...")
-                        print(response)
-                        sys.stdout.flush()
+                        message = json.loads(content)
+                        response = self.process_message(message)
+                        if response:
+                            logger.info(f"Resposta gerada: {response}")
+                            print(response)
+                        else:
+                            logger.warning("Nenhuma resposta gerada")
                     except json.JSONDecodeError as e:
-                        logger.error(f"Erro ao processar mensagem: {str(e)}", exc_info=True)
-                        print(json.dumps({
-                            "content": {"error": str(e)},
-                            "metadata": {"status": "error"}
-                        }))
-                        sys.stdout.flush()
-
-        except KeyboardInterrupt:
-            logger.info("Servidor interrompido pelo usuário")
+                        logger.error(f"Erro ao decodificar JSON: {str(e)}")
+                else:
+                    logger.warning("Arquivo vazio")
+                    
         except Exception as e:
-            logger.error(f"Erro fatal no servidor: {str(e)}", exc_info=True)
+            logger.error(f"Erro ao ler arquivo: {str(e)}")
+        finally:
+            if os.path.exists(pipe_path):
+                os.remove(pipe_path)
+                logger.info("Arquivo removido")
 
 if __name__ == "__main__":
     # Executar como serviço standalone
-    handler = MCPHandler()
+    llm_provider = LLMProvider()
+    prompt_manager = PromptManager()
+    handler = MCPHandler(llm_provider, prompt_manager)
     handler.initialize(api_key=None)  # A chave será obtida das variáveis de ambiente
     handler.run()

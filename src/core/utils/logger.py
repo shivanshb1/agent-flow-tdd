@@ -7,7 +7,7 @@ from pathlib import Path
 from functools import wraps
 import time
 import re
-from typing import Optional, Union, Dict, Any
+from typing import Optional, Union, Any
 from rich.console import Console
 from rich.logging import RichHandler
 
@@ -188,7 +188,7 @@ def log_execution(func=None, level=logging.INFO):
                 elapsed = time.time() - start_time
                 logger.log(level, f"Concluído {func.__qualname__} em {elapsed:.3f}s")
                 return result
-            except Exception as e:
+            except Exception:
                 elapsed = time.time() - start_time
                 logger.error(f"Erro em {func.__qualname__} após {elapsed:.3f}s", exc_info=True)
                 raise

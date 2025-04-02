@@ -7,6 +7,12 @@ VENV = .venv
 PYTHON = $(VENV)/bin/python
 PIP = $(VENV)/bin/pip
 
+# Carrega variáveis de ambiente do arquivo .env se existir
+ifneq (,$(wildcard .env))
+    include .env
+    export
+endif
+
 # Instalação e setup
 install:
 	@echo "🔧 Instalando dependências..."
@@ -25,11 +31,10 @@ test:
 run:
 	@echo "🖥️ Executando CLI..."
 	@if [ "$(mode)" = "mcp" ]; then \
-		rm -f mcp_pipe && mkfifo mcp_pipe && \
-		$(PYTHON) -m src.cli "$(prompt-tdd)" --format $(format) --mode $(mode) > mcp_server.log 2>&1 & \
-		echo "✅ Servidor MCP iniciado em background (PID: $$!)" && \
-		sleep 2 && \
-		echo '{"content": "$(prompt-tdd)", "metadata": {"type": "feature", "options": {"format": "$(format)", "model": "gpt-3.5-turbo", "temperature": 0.7}}}' > mcp_pipe; \
+		rm -f logs/mcp_pipe.log && \
+		echo '{"content": "$(prompt-tdd)", "metadata": {"type": "feature", "options": {"format": "$(format)", "model": "gpt-3.5-turbo", "temperature": 0.7}}}' > logs/mcp_pipe.log && \
+		$(PYTHON) -m src.cli "$(prompt-tdd)" --format $(format) --mode $(mode) > logs/mcp_server.log 2>&1 & \
+		echo "✅ Servidor MCP iniciado em background (PID: $$!)"; \
 	else \
 		$(PYTHON) -m src.cli "$(prompt-tdd)" --format $(format) --mode $(mode); \
 	fi
@@ -44,7 +49,7 @@ autoflake:
 # Limpeza
 clean:
 	@echo "🧹 Limpando arquivos temporários..."
-	@rm -rf .venv *.egg-info dist build .pytest_cache .coverage htmlcov mcp*.log mcp_pipe
+	@rm -rf .venv *.egg-info dist build .pytest_cache .coverage htmlcov mcp*.log mcp_pipe.log
 	@find . -type d -name __pycache__ -exec rm -rf {} +
 	@echo "✨ Limpeza concluída!"
 

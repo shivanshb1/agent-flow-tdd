@@ -2,15 +2,13 @@
 Testes para o módulo CLI.
 """
 import json
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 import os
 
 import pytest
 from typer.testing import CliRunner
 
 from src.cli import app
-from src.core.utils import ModelManager, get_env_status, validate_env
-from src.app import AgentOrchestrator
 
 # Setup
 runner = CliRunner()

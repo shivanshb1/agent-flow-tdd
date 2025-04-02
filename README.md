@@ -1,6 +1,6 @@
 # Prompt TDD
 
-Framework para desenvolvimento orientado a testes usando prompts em linguagem natural.
+Um sistema para desenvolvimento orientado a testes usando prompts de IA.
 
 ## 🚀 Funcionalidades
 
@@ -20,26 +20,19 @@ Framework para desenvolvimento orientado a testes usando prompts em linguagem na
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/seu-usuario/agent-flow-tdd.git
-cd agent-flow-tdd
+git clone https://github.com/seu-usuario/prompt-tdd.git
+cd prompt-tdd
 ```
 
-2. Crie e ative o ambiente virtual:
+2. Crie um arquivo `.env` com sua chave da API do OpenAI:
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # Linux/Mac
-# ou
-.venv\Scripts\activate  # Windows
+cp .env.example .env
+# Edite o arquivo .env e adicione sua chave da API
 ```
 
 3. Instale as dependências:
 ```bash
 make install
-```
-
-4. Configure a variável de ambiente `OPENAI_KEY`:
-```bash
-export OPENAI_KEY="sua-chave-aqui"
 ```
 
 ## 🎮 Comandos Disponíveis

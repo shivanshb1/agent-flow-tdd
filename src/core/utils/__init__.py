@@ -2,23 +2,49 @@
 Utils package - Utilitários e ferramentas do framework
 """
 
-from .model_manager import ModelManager
-from .env import get_env_status, validate_env
-from .logger import (
-    log_error,
-    log_warning,
-    log_info,
-    log_debug,
-    get_logger,
-    log_execution,
-    setup_logging
-)
-from .data_masking import mask_sensitive_data
-from .token_validator import TokenValidator
-from .version_analyzer import (
-    analyze_commit_message,
-    get_current_version,
-    increment_version,
-    update_version_files,
-    smart_bump
-) 
+import logging
+import os
+from typing import Dict, Optional
+
+logger = logging.getLogger(__name__)
+
+class ModelManager:
+    def __init__(self):
+        self.model = "gpt-3.5-turbo"
+        self.temperature = 0.7
+        self.api_key = os.getenv("OPENAI_API_KEY")
+        logger.info("ModelManager inicializado")
+        
+    def configure(self, model: Optional[str] = None, temperature: Optional[float] = None) -> None:
+        """Configura os parâmetros do modelo."""
+        if model:
+            self.model = model
+        if temperature is not None:
+            self.temperature = temperature
+        logger.info(f"Modelo configurado: {self.model} (temperatura: {self.temperature})")
+        
+    def get_config(self) -> Dict:
+        """Retorna a configuração atual do modelo."""
+        return {
+            "model": self.model,
+            "temperature": self.temperature
+        }
+
+def get_env_status() -> Dict[str, bool]:
+    """Verifica o status das variáveis de ambiente necessárias."""
+    return {
+        "OPENAI_API_KEY": bool(os.getenv("OPENAI_API_KEY"))
+    }
+
+def validate_env() -> bool:
+    """Valida se todas as variáveis de ambiente necessárias estão configuradas."""
+    status = get_env_status()
+    missing = [key for key, value in status.items() if not value]
+    
+    if missing:
+        logger.error(f"Variáveis de ambiente faltando: {', '.join(missing)}")
+        return False
+        
+    logger.info("Todas as variáveis de ambiente estão configuradas")
+    return True
+
