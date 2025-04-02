@@ -28,26 +28,24 @@ os.environ["CZ_CUSTOMIZE_HOOK"] = "cz_customize"
 
 # Dependências principais
 install_requires = [
-    "openai>=1.0.0",
-    "openrouter>=0.3.0",
-    "google-generativeai>=0.3.0",
-    "rope>=1.10.0",
-    "pygithub>=2.1.0",
-    "python-dotenv>=1.0.0",
-    "rich>=13.0.0",
     "typer>=0.9.0",
-    "pydantic>=2.0.0",
+    "rich>=13.7.0",
+    "openai>=1.12.0",
+    "openrouter>=1.0.0",
+    "google-generativeai>=0.8.0",
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.6.0",
     "requests>=2.31.0",
     "tenacity>=8.2.0",
     "cachetools>=5.3.0",
-    "flask>=3.0.0",
-    "mcp[cli]>=1.6.0",  # Usando o pacote do PyPI com o extra cli
+    "mcp[cli]",
 ]
 
 # Dependências de desenvolvimento
 dev_requires = [
-    "pytest>=7.0.0",
+    "pytest>=8.0.0",
     "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
     "black>=23.0.0",
     "isort>=5.12.0",
     "flake8>=6.1.0",
@@ -68,16 +66,11 @@ setup(
     name="prompt-tdd",
     version="0.1.0",
     packages=find_packages(),
-    install_requires=[
-        "typer>=0.9.0",
-        "rich>=13.7.0",
-        "openai>=1.12.0",
-        "python-dotenv>=1.0.0",
-        "pydantic>=2.6.0",
-        "pytest>=8.0.0",
-        "pytest-cov>=4.1.0",
-        "pytest-mock>=3.12.0"
-    ],
+    install_requires=install_requires,
+    extras_require={
+        "dev": dev_requires,
+        "build": build_requires,
+    },
     entry_points={
         "console_scripts": [
             "prompt-tdd=src.cli:app"

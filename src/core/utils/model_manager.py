@@ -3,6 +3,7 @@ Gerenciador de modelos de IA com suporte a múltiplos provedores e fallback auto
 """
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
+import os
 
 import google.generativeai as genai
 import openai
@@ -46,6 +47,9 @@ class ModelManager:
         )
         self.configs: Dict[str, ModelConfig] = {}
         self._load_configs()
+        self.model = None
+        self.temperature = None
+        self.api_key = None
 
     def _load_configs(self) -> None:
         """Carrega as configurações dos modelos."""
@@ -128,6 +132,11 @@ class ModelManager:
         """Retorna a configuração de um modelo."""
         return self.configs.get(model_name)
 
+    def configure(self, model: str, temperature: float = 0.7):
+        """Configura o modelo a ser usado."""
+        self.model = model
+        self.temperature = temperature
+
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=4, max=10),
@@ -171,7 +180,6 @@ class ModelManager:
             # Adiciona parâmetros do modelo aos kwargs
             kwargs.update({
                 "model": model_name,
-                "elevation_model": elevation_model,
                 "force": force,
             })
 
@@ -305,72 +313,64 @@ class ModelManager:
             logger.error(f"Erro ao gerar resposta com {config.provider}: {str(e)}")
             raise
 
-    def configure(
-        self,
-        model: str = "gpt-4-turbo",
-        elevation_model: Optional[str] = None,
-        force: bool = False,
-        api_key: Optional[str] = None,
-        timeout: int = 30,
-        max_retries: int = 3,
-        temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
-    ) -> None:
-        """
-        Configura o gerenciador de modelos com parâmetros específicos.
-        
-        Args:
-            model: Nome do modelo principal
-            elevation_model: Nome do modelo de fallback
-            force: Se True, força o uso do modelo principal sem fallback
-            api_key: Chave da API (opcional, usa a do ambiente se não fornecida)
-            timeout: Tempo limite em segundos
-            max_retries: Número máximo de tentativas
-            temperature: Temperatura para geração
-            max_tokens: Número máximo de tokens
-        """
-        try:
-            # Se uma nova chave foi fornecida, recarrega as configurações
-            if api_key:
-                # Determina o provedor com base no modelo
-                if model.startswith("gpt-"):
-                    self._add_openai_models(api_key)
-                elif model.startswith("openrouter/") or model.startswith("anthropic/"):
-                    self._add_openrouter_models(api_key)
-                elif model.startswith("gemini-"):
-                    self._add_gemini_models(api_key)
-                else:
-                    raise ValueError(f"Provedor não identificado para o modelo {model}")
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+    def generate_response(self, prompt: str) -> Dict[str, Any]:
+        """Gera uma resposta usando o modelo configurado."""
+        if not self.model:
+            raise ValueError("Modelo não configurado")
 
-            # Verifica se o modelo principal está disponível
-            config = self.get_model_config(model)
-            if not config:
-                raise ValueError(f"Modelo {model} não disponível")
+        if "gpt" in self.model:
+            return self._generate_openai_response(prompt)
+        elif "gemini" in self.model:
+            return self._generate_gemini_response(prompt)
+        elif "claude" in self.model:
+            return self._generate_anthropic_response(prompt)
+        else:
+            raise ValueError(f"Modelo não suportado: {self.model}")
 
-            # Atualiza configurações do modelo principal
-            config.timeout = timeout
-            config.max_retries = max_retries
-            config.temperature = temperature
-            if max_tokens:
-                config.max_tokens = max_tokens
+    def _generate_openai_response(self, prompt: str) -> Dict[str, Any]:
+        """Gera uma resposta usando o modelo OpenAI."""
+        client = openai.OpenAI(api_key=os.getenv("OPENAI_KEY"))
+        response = client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=self.temperature
+        )
+        return {
+            "content": response.choices[0].message.content,
+            "model": self.model,
+            "usage": {
+                "prompt_tokens": response.usage.prompt_tokens,
+                "completion_tokens": response.usage.completion_tokens,
+                "total_tokens": response.usage.total_tokens
+            }
+        }
 
-            # Se houver modelo de elevação, verifica e configura
-            if elevation_model:
-                elevation_config = self.get_model_config(elevation_model)
-                if not elevation_config:
-                    raise ValueError(f"Modelo de elevação {elevation_model} não disponível")
-                
-                # Atualiza configurações do modelo de elevação
-                elevation_config.timeout = timeout
-                elevation_config.max_retries = max_retries
-                elevation_config.temperature = temperature
-                if max_tokens:
-                    elevation_config.max_tokens = max_tokens
+    def _generate_gemini_response(self, prompt: str) -> Dict[str, Any]:
+        """Gera uma resposta usando o modelo Gemini."""
+        genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+        model = genai.GenerativeModel(self.model)
+        response = model.generate_content(prompt)
+        return {
+            "content": response.text,
+            "model": self.model,
+            "usage": {}  # Gemini não fornece informações de uso
+        }
 
-            logger.info(
-                f"ModelManager configurado com sucesso: modelo={model}, elevation={elevation_model}"
-            )
-
-        except Exception as e:
-            logger.error(f"Erro ao configurar ModelManager: {str(e)}")
-            raise 
+    def _generate_anthropic_response(self, prompt: str) -> Dict[str, Any]:
+        """Gera uma resposta usando o modelo Anthropic via OpenRouter."""
+        client = openrouter.OpenRouter(api_key=os.getenv("OPENROUTER_KEY"))
+        response = client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=self.temperature
+        )
+        return {
+            "content": response.choices[0].message.content,
+            "model": self.model,
+            "usage": {
+                "prompt_tokens": response.usage.prompt_tokens,
+                "completion_tokens": response.usage.completion_tokens,
+                "total_tokens": response.usage.total_tokens
+            }
+        } 

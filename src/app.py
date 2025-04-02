@@ -116,8 +116,7 @@ class AgentOrchestrator:
         if api_key:
             self.model_manager.configure(
                 model="gpt-3.5-turbo",
-                elevation_model="gpt-4-turbo",
-                api_key=api_key
+                temperature=0.7
             )
             
         self.triage = TriageAgent(self.model_manager)

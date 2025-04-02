@@ -223,8 +223,9 @@ make run prompt-tdd="Criar um sistema de login com autenticação JWT"
 # Verificar status do ambiente
 make run prompt-tdd="" mode=status
 
-# Iniciar servidor MCP
+# Iniciar servidor MCP em background (sem saída no terminal)
 make run prompt-tdd="" mode=mcp
+# O servidor MCP será iniciado em background e você verá apenas o PID do processo
 ```
 
 ### 2. Usando o comando diretamente
@@ -244,8 +245,11 @@ prompt-tdd "Criar um sistema de login com autenticação JWT"
 # Verificar status do ambiente
 prompt-tdd --mode status ""
 
-# Iniciar servidor MCP
+# Iniciar servidor MCP (irá bloquear o terminal e mostrar logs)
 prompt-tdd --mode mcp ""
+
+# Ou inicie em background sem logs
+nohup prompt-tdd --mode mcp "" > /dev/null 2>&1 &
 ```
 
 ## Opções
