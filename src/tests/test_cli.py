@@ -129,17 +129,25 @@ def test_mcp_command_feature(mock_orchestrator):
         ]
         
         # Execução
-        result = runner.invoke(app, ["mcp"])
-        
-        # Verificações
-        assert result.exit_code == 0
-        mock_orchestrator.handle_input.assert_called_once_with(input_data["prompt"])
-        assert "success" in result.stdout
+        with patch("builtins.print") as mock_print:
+            result = runner.invoke(app, ["mcp"])
+            
+            # Verificações
+            assert result.exit_code == 0
+            mock_orchestrator.handle_input.assert_called_once_with(input_data["prompt"])
+            mock_print.assert_called_with(json.dumps({
+                "status": "success",
+                "result": {"feature": "Login"}
+            }))
 
 def test_mcp_command_status(mock_get_env_status, mock_model_manager):
     """Testa o comando MCP obtendo status."""
     # Setup
     mock_model_manager.get_available_models.return_value = ["gpt-4"]
+    mock_get_env_status.return_value = {
+        "required": {"OPENAI_KEY": True},
+        "optional": {"ELEVATION_MODEL": False}
+    }
     input_data = {"type": "status"}
     
     # Simula entrada stdin
@@ -150,12 +158,21 @@ def test_mcp_command_status(mock_get_env_status, mock_model_manager):
         ]
         
         # Execução
-        result = runner.invoke(app, ["mcp"])
-        
-        # Verificações
-        assert result.exit_code == 0
-        mock_get_env_status.assert_called_once()
-        mock_model_manager.get_available_models.assert_called_once()
+        with patch("builtins.print") as mock_print:
+            result = runner.invoke(app, ["mcp"])
+            
+            # Verificações
+            assert result.exit_code == 0
+            mock_get_env_status.assert_called_once()
+            mock_model_manager.get_available_models.assert_called_once()
+            mock_print.assert_called_with(json.dumps({
+                "status": "success",
+                "result": {
+                    "env": mock_get_env_status.return_value,
+                    "models": ["gpt-4"],
+                    "orchestrator": True
+                }
+            }))
 
 def test_feature_command_address_requirements(mock_model_manager, mock_orchestrator, mock_validate_env):
     """Testa o comando feature via terminal para requisitos de endereço."""
@@ -261,9 +278,13 @@ def test_mcp_command_address_requirements(mock_orchestrator):
         ]
         
         # Execução
-        result = runner.invoke(app, ["mcp"])
-        
-        # Verificações
-        assert result.exit_code == 0
-        mock_orchestrator.handle_input.assert_called_once_with(input_data["prompt"])
-        assert "success" in result.stdout 
+        with patch("builtins.print") as mock_print:
+            result = runner.invoke(app, ["mcp"])
+            
+            # Verificações
+            assert result.exit_code == 0
+            mock_orchestrator.handle_input.assert_called_once_with(input_data["prompt"])
+            mock_print.assert_called_with(json.dumps({
+                "status": "success",
+                "result": expected_result
+            })) 
