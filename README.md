@@ -218,13 +218,13 @@ O Prompt TDD pode ser usado de duas formas:
 
 ```bash
 # Criar uma nova feature
-make run "Criar um sistema de login com autenticação JWT"
+make run prompt-tdd="Criar um sistema de login com autenticação JWT"
 
 # Verificar status do ambiente
-make run --mode status ""
+make run prompt-tdd="" mode=status
 
 # Iniciar servidor MCP
-make run --mode mcp ""
+make run prompt-tdd="" mode=mcp
 ```
 
 ### 2. Usando o comando diretamente

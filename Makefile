@@ -23,7 +23,7 @@ test:
 # Execução do CLI
 run:
 	@echo "🖥️ Executando CLI..."
-	$(PYTHON) -m src.cli $(if $(mode),--mode $(mode),) $(if $(format),--format $(format),) "$(prompt)"
+	$(PYTHON) -m src.cli $(if $(mode),--mode $(mode),) $(if $(format),--format $(format),) "$(prompt-tdd)"
 
 # Limpeza
 clean:
