@@ -83,7 +83,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "agent-flow-tdd=src.cli:app",
+            "prompt-tdd=src.cli:app",
             "cz=commitizen.cli:main",
         ],
     },

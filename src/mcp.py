@@ -27,6 +27,7 @@ except ImportError:
         """Mock da classe BaseMCPHandler do SDK MCP."""
         def __init__(self):
             self.initialized = False
+            self.hook = "/prompt-tdd"
 
         def initialize(self, api_key: str) -> None:
             """Inicializa o handler com a chave da API."""
@@ -62,6 +63,7 @@ class MCPHandler(BaseMCPHandler):
         """Inicializa o handler."""
         super().__init__()
         self.orchestrator = None
+        self.hook = "/prompt-tdd"
 
     def initialize(self, api_key: str) -> None:
         """Inicializa o handler com a chave da API."""

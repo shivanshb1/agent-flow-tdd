@@ -92,14 +92,14 @@ test-e2e: ## Executa testes end-to-end
 cli-feature: ## Executa o CLI no modo feature
 	@echo "🖥️ Iniciando CLI no modo feature..."
 	@read -p "Digite o prompt da feature: " prompt; \
-	$(VENV_PYTHON) -m src.cli feature "$$prompt"
+	$(VENV_BIN)/prompt-tdd feature "$$prompt"
 
 cli-status: ## Executa o CLI no modo status
 	@echo "🖥️ Iniciando CLI no modo status..."
-	@$(VENV_PYTHON) -m src.cli status
+	@$(VENV_BIN)/prompt-tdd status
 
 cli-mcp: ## Executa o CLI no modo MCP
 	@echo "🖥️ Iniciando CLI no modo MCP..."
-	@$(VENV_PYTHON) -m src.cli mcp
+	@$(VENV_BIN)/prompt-tdd mcp
 
 cli: cli-feature ## Alias para cli-feature (comando padrão) 

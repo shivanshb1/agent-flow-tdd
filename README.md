@@ -65,10 +65,10 @@ Inicia o CLI para processamento de features.
 make cli
 
 # Exemplos de uso:
-cli feature "Criar sistema de login com autenticação de dois fatores"
-cli feature "Criar sistema de cadastro de usuários" --model gpt-4-turbo
-cli feature "Criar API REST" --format markdown
-cli status
+prompt-tdd feature "Criar sistema de login com autenticação de dois fatores"
+prompt-tdd feature "Criar sistema de cadastro de usuários" --model gpt-4-turbo
+prompt-tdd feature "Criar API REST" --format markdown
+prompt-tdd status
 ```
 
 #### Opções do comando `feature`:
@@ -93,7 +93,7 @@ O projeto agora suporta o [Model Context Protocol](https://github.com/modelconte
 
 1. Inicie o modo MCP:
 ```bash
-cli mcp
+prompt-tdd mcp
 ```
 
 2. Envie mensagens no formato MCP:
@@ -146,10 +146,10 @@ handler.run()
 
 ```bash
 # OpenAI GPT-4
-cli feature "Criar API" --model gpt-4-turbo --api-key $OPENAI_KEY
+prompt-tdd feature "Criar API" --model gpt-4-turbo --api-key $OPENAI_KEY
 
 # Anthropic Claude
-cli feature "Criar API" --model claude-3 --api-key $ANTHROPIC_KEY
+prompt-tdd feature "Criar API" --model claude-3 --api-key $ANTHROPIC_KEY
 ```
 
 ### 3. Via MCP
@@ -209,3 +209,44 @@ Os logs são gerados automaticamente com:
 ## 📄 Licença
 
 Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+## Uso
+
+Para usar o Agent Flow TDD, você tem duas opções:
+
+### 1. Usando o Makefile (Recomendado)
+
+O Makefile fornece comandos convenientes para executar o CLI:
+
+```bash
+# Instalar dependências e configurar ambiente
+make install
+
+# Executar o CLI no modo feature (interativo)
+make cli
+
+# Ou especificar o modo diretamente:
+make cli-feature  # Para criar uma nova feature
+make cli-status   # Para verificar o status
+make cli-mcp      # Para iniciar o servidor MCP
+```
+
+### 2. Usando o comando diretamente
+
+Se você preferir usar o comando diretamente, primeiro ative o ambiente virtual:
+
+```bash
+# Ativar o ambiente virtual
+source .venv/bin/activate
+
+# Agora você pode usar o comando prompt-tdd
+prompt-tdd feature "Sua feature aqui"
+prompt-tdd status
+prompt-tdd mcp
+```
+
+O comando `prompt-tdd` suporta os seguintes subcomandos:
+
+- `feature`: Cria uma nova feature baseada no prompt fornecido
+- `status`: Verifica o status atual do projeto
+- `mcp`: Inicia o servidor MCP (Model Context Protocol)
