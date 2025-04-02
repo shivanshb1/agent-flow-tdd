@@ -8,13 +8,6 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from src.agents import (
-    ConceptGenerationAgent,
-    FeatureCoordinatorAgent,
-    GitHubIntegrationAgent,
-    PlanValidator,
-    TDDCriteriaAgent,
-)
 from src.core.utils import (
     ModelManager,
     get_env_status,
@@ -22,7 +15,7 @@ from src.core.utils import (
     validate_env,
 )
 
-app = typer.Typer(help="Agent Flow Craft - Framework para automação de fluxo de features")
+app = typer.Typer(help="Agent Flow TDD - Framework para automação de fluxo de features TDD")
 console = Console()
 
 
