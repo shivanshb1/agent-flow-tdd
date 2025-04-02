@@ -82,78 +82,90 @@ cli status
 - `--max-tokens, -mt`: Limite de tokens (opcional)
 - `--format, -fmt`: Formato de saída (json/markdown)
 
-### Modo MCP (Multi-Command Protocol)
+### Protocolo MCP (Model Context Protocol)
 
-O modo MCP permite interação via stdin/stdout usando JSON:
+O projeto agora suporta o [Model Context Protocol](https://github.com/modelcontextprotocol/protocol) oficial, permitindo:
+- Integração padronizada com diferentes modelos de IA
+- Comunicação bidirecional via protocolo MCP
+- Suporte a streaming e eventos assíncronos
 
+#### Como Funciona
+
+1. Inicie o modo MCP:
 ```bash
 cli mcp
 ```
 
-#### Comandos MCP:
-
-1. Processar Feature:
+2. Envie mensagens no formato MCP:
 ```json
 {
-  "type": "feature",
-  "prompt": "Criar sistema de login",
-  "options": {
-    "model": "gpt-4-turbo",
-    "temperature": 0.7,
-    "format": "json"
+  "content": "Criar sistema de login",
+  "metadata": {
+    "type": "feature",
+    "options": {
+      "model": "gpt-4-turbo",
+      "temperature": 0.7,
+      "format": "json"
+    }
   }
 }
 ```
 
-2. Obter Status:
+3. Receba respostas no formato MCP:
 ```json
 {
-  "type": "status"
+  "content": {
+    "feature": "Sistema de Login",
+    "acceptance_criteria": [...],
+    "test_scenarios": [...],
+    "complexity": 3
+  },
+  "metadata": {
+    "status": "success",
+    "type": "feature"
+  }
 }
 ```
 
 ## 🤖 Integração de Modelos
 
-O projeto atualmente suporta modelos OpenAI via API, mas foi projetado para ser extensível. Para integrar outros modelos:
+O projeto usa o Model Context Protocol para integração com diferentes modelos:
 
-### 1. Via ModelManager
-
-Implemente um novo provider no `ModelManager`:
+### 1. Via SDK MCP
 
 ```python
-class ModelManager:
-    def configure(self, model: str, api_key: str, **kwargs):
-        if "claude" in model.lower():
-            return self._configure_anthropic(api_key, **kwargs)
-        elif "gpt" in model.lower():
-            return self._configure_openai(api_key, **kwargs)
-        # Adicione seu provider aqui
+from mcp_sdk import MCPHandler
+from src.app import AgentOrchestrator
+
+handler = MCPHandler()
+handler.initialize(api_key="sua-chave")
+handler.run()
 ```
 
 ### 2. Via CLI
-
-Use as opções do comando `feature`:
 
 ```bash
 # OpenAI GPT-4
 cli feature "Criar API" --model gpt-4-turbo --api-key $OPENAI_KEY
 
-# Claude (quando implementado)
+# Anthropic Claude
 cli feature "Criar API" --model claude-3 --api-key $ANTHROPIC_KEY
 ```
 
 ### 3. Via MCP
 
-Especifique o modelo nas options do comando:
+Especifique o modelo nas options:
 
 ```json
 {
-  "type": "feature",
-  "prompt": "Criar API REST",
-  "options": {
-    "model": "gpt-4-turbo",  // ou "claude-3", etc
-    "api_key": "sua-chave",
-    "temperature": 0.7
+  "content": "Criar API REST",
+  "metadata": {
+    "type": "feature",
+    "options": {
+      "model": "gpt-4-turbo",
+      "api_key": "sua-chave",
+      "temperature": 0.7
+    }
   }
 }
 ```
@@ -163,10 +175,8 @@ Especifique o modelo nas options do comando:
 Atualmente:
 - OpenAI GPT-3.5 Turbo
 - OpenAI GPT-4 Turbo
-
-Em desenvolvimento:
-- Anthropic Claude
-- Outros modelos via API
+- Anthropic Claude (via MCP)
+- Outros modelos compatíveis com MCP
 
 ## 🧪 Testes
 

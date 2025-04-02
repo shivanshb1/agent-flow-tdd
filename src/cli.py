@@ -180,71 +180,19 @@ def status() -> None:
 
 @app.command()
 def mcp() -> None:
-    """
-    Inicia o modo MCP via stdin/stdout.
-    """
+    """Inicia o modo MCP via SDK"""
+    from src.mcp import MCPHandler
     try:
-        # Desativa saída rich para evitar interferência no protocolo
         console = Console(file=sys.stderr)
-        console.print("[green]Iniciando modo MCP via stdin/stdout...[/green]")
+        console.print("[green]Iniciando modo MCP via SDK...[/green]")
         
-        # Inicializa o orquestrador
-        orchestrator = get_orchestrator()
+        # Inicializa o handler com a chave da API
+        handler = MCPHandler()
+        handler.initialize(api_key=os.getenv("OPENAI_KEY"))
         
-        while True:
-            try:
-                # Lê comando da entrada padrão
-                line = sys.stdin.readline()
-                if not line:
-                    break
-                
-                # Processa o comando JSON
-                command = json.loads(line)
-                
-                # Executa o comando apropriado
-                if command["type"] == "feature":
-                    result = orchestrator.handle_input(command["prompt"])
-                    response = {
-                        "status": "success",
-                        "result": result
-                    }
-                    sys.stdout.write(json.dumps(response) + "\n")
-                elif command["type"] == "status":
-                    env_status = get_env_status()
-                    available_models = orchestrator.model_manager.get_available_models()
-                    response = {
-                        "status": "success",
-                        "result": {
-                            "env": env_status,
-                            "models": available_models,
-                            "orchestrator": True
-                        }
-                    }
-                    sys.stdout.write(json.dumps(response) + "\n")
-                else:
-                    response = {
-                        "status": "error",
-                        "message": f"Comando desconhecido: {command['type']}"
-                    }
-                    sys.stdout.write(json.dumps(response) + "\n")
-                
-            except json.JSONDecodeError:
-                response = {
-                    "status": "error",
-                    "message": "Comando inválido: JSON mal formatado"
-                }
-                sys.stdout.write(json.dumps(response) + "\n")
-                
-            except Exception as e:
-                log_error(e)
-                response = {
-                    "status": "error",
-                    "message": str(e)
-                }
-                sys.stdout.write(json.dumps(response) + "\n")
-                
-            sys.stdout.flush()
-            
+        # Inicia o loop MCP
+        handler.run()
+        
     except Exception as e:
         log_error(e)
         console.print(f"[red]Erro no modo MCP: {str(e)}[/red]")

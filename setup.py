@@ -60,6 +60,7 @@ setup(
         "mypy>=1.5.0",
         "autoflake>=2.2.0",
         "commitizen>=3.12.0",
+        "mcp-sdk @ git+https://github.com/modelcontextprotocol/python-sdk.git"
     ],
     entry_points={
         "console_scripts": [
