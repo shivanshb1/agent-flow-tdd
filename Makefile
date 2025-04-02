@@ -52,7 +52,7 @@ pack: build  ## Cria pacote para distribuição
 
 publish: pack  ## Publica pacote no PyPI
 	@echo "🚀 Publicando pacote..."
-	@$(VENV_BIN)/twine upload $(DIST_DIR)/*
+	@TWINE_USERNAME=__token__ TWINE_PASSWORD=$(PYPI_TOKEN) $(VENV_BIN)/twine upload $(DIST_DIR)/*
 	@echo "✅ Pacote publicado"
 
 version:  ## Mostra a versão atual do projeto
