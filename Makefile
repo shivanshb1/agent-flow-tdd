@@ -90,7 +90,8 @@ test-e2e: ## Executa testes end-to-end
 
 cli-feature: ## Executa o CLI no modo feature
 	@echo "🖥️ Iniciando CLI no modo feature..."
-	@$(VENV_PYTHON) -m src.cli feature "Descreva sua feature aqui"
+	@read -p "Digite o prompt da feature: " prompt; \
+	$(VENV_PYTHON) -m src.cli feature "$$prompt"
 
 cli-status: ## Executa o CLI no modo status
 	@echo "🖥️ Iniciando CLI no modo status..."
