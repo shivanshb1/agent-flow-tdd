@@ -12,8 +12,6 @@ from typing import Optional, Dict, Any
 from src.app import AgentOrchestrator
 from src.core.utils import ModelManager
 
-from .prompt import PromptManager
-
 from openai import OpenAI
 
 # Configuração básica de logging
