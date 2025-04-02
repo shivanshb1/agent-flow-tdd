@@ -195,6 +195,9 @@ def log_execution(func=None, level=logging.INFO):
         return wrapper
     return decorator(func) if func else decorator
 
+# Alias para compatibilidade
+get_logger = setup_logging
+
 # Logger global padrão
 logger = setup_logging()
 
