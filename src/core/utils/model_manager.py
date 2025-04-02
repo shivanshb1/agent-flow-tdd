@@ -132,7 +132,7 @@ class ModelManager:
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=4, max=10),
     )
-    async def generate(
+    def generate(
         self,
         prompt: str,
         model_name: str = "gpt-4-turbo",
@@ -169,7 +169,7 @@ class ModelManager:
 
         try:
             # Gera a resposta usando o modelo apropriado
-            response = await self._generate_with_provider(config, prompt, **kwargs)
+            response = self._generate_with_provider(config, prompt, **kwargs)
             self.cache[cache_key] = response
             return response
 
@@ -182,9 +182,9 @@ class ModelManager:
             if not elevation_config:
                 raise ValueError(f"Modelo de elevação {elevation_model} não disponível")
 
-            return await self._generate_with_provider(elevation_config, prompt, **kwargs)
+            return self._generate_with_provider(elevation_config, prompt, **kwargs)
 
-    async def _generate_with_provider(
+    def _generate_with_provider(
         self,
         config: ModelConfig,
         prompt: str,
@@ -192,8 +192,8 @@ class ModelManager:
     ) -> Union[str, Dict[str, Any]]:
         """Gera uma resposta usando um provedor específico."""
         if config.provider == ModelProvider.OPENAI:
-            client = openai.AsyncClient(api_key=config.api_key)
-            response = await client.chat.completions.create(
+            client = openai.Client(api_key=config.api_key)
+            response = client.chat.completions.create(
                 model=config.model_id,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=config.temperature,
@@ -203,8 +203,8 @@ class ModelManager:
             return response.choices[0].message.content
 
         elif config.provider == ModelProvider.OPENROUTER:
-            client = openrouter.AsyncClient(api_key=config.api_key)
-            response = await client.chat.completions.create(
+            client = openrouter.Client(api_key=config.api_key)
+            response = client.chat.completions.create(
                 model=config.model_id,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=config.temperature,
@@ -216,7 +216,7 @@ class ModelManager:
         elif config.provider == ModelProvider.GEMINI:
             genai.configure(api_key=config.api_key)
             model = genai.GenerativeModel(config.model_id)
-            response = await model.generate_content_async(prompt, **kwargs)
+            response = model.generate_content(prompt, **kwargs)
             return response.text
 
         raise ValueError(f"Provedor {config.provider} não suportado")
