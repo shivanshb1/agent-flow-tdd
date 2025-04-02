@@ -191,35 +191,72 @@ class ModelManager:
         **kwargs: Any,
     ) -> Union[str, Dict[str, Any]]:
         """Gera uma resposta usando um provedor específico."""
-        if config.provider == ModelProvider.OPENAI:
-            client = openai.Client(api_key=config.api_key)
-            response = client.chat.completions.create(
-                model=config.model_id,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=config.temperature,
-                max_tokens=config.max_tokens,
-                **kwargs,
-            )
-            return response.choices[0].message.content
+        try:
+            if config.provider == ModelProvider.OPENAI:
+                client = openai.Client(api_key=config.api_key)
+                messages = []
+                
+                # Se houver system_prompt nos kwargs, adiciona como mensagem do sistema
+                if "system_prompt" in kwargs:
+                    messages.append({"role": "system", "content": kwargs.pop("system_prompt")})
+                
+                # Adiciona o prompt do usuário
+                messages.append({"role": "user", "content": prompt})
+                
+                response = client.chat.completions.create(
+                    model=config.model_id,
+                    messages=messages,
+                    temperature=config.temperature,
+                    max_tokens=config.max_tokens,
+                    **kwargs,
+                )
+                return response.choices[0].message.content
 
-        elif config.provider == ModelProvider.OPENROUTER:
-            client = openrouter.Client(api_key=config.api_key)
-            response = client.chat.completions.create(
-                model=config.model_id,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=config.temperature,
-                max_tokens=config.max_tokens,
-                **kwargs,
-            )
-            return response.choices[0].message.content
+            elif config.provider == ModelProvider.OPENROUTER:
+                client = openrouter.Client(api_key=config.api_key)
+                messages = []
+                
+                # Se houver system_prompt nos kwargs, adiciona como mensagem do sistema
+                if "system_prompt" in kwargs:
+                    messages.append({"role": "system", "content": kwargs.pop("system_prompt")})
+                
+                # Adiciona o prompt do usuário
+                messages.append({"role": "user", "content": prompt})
+                
+                response = client.chat.completions.create(
+                    model=config.model_id,
+                    messages=messages,
+                    temperature=config.temperature,
+                    max_tokens=config.max_tokens,
+                    **kwargs,
+                )
+                return response.choices[0].message.content
 
-        elif config.provider == ModelProvider.GEMINI:
-            genai.configure(api_key=config.api_key)
-            model = genai.GenerativeModel(config.model_id)
-            response = model.generate_content(prompt, **kwargs)
-            return response.text
+            elif config.provider == ModelProvider.GEMINI:
+                genai.configure(api_key=config.api_key)
+                model = genai.GenerativeModel(config.model_id)
+                
+                # Configura os parâmetros do modelo
+                generation_config = {
+                    "temperature": config.temperature,
+                    "max_output_tokens": config.max_tokens,
+                }
+                
+                # Remove parâmetros não suportados
+                kwargs.pop("system_prompt", None)
+                
+                response = model.generate_content(
+                    prompt,
+                    generation_config=generation_config,
+                    **kwargs
+                )
+                return response.text
 
-        raise ValueError(f"Provedor {config.provider} não suportado")
+            raise ValueError(f"Provedor {config.provider} não suportado")
+            
+        except Exception as e:
+            logger.error(f"Erro ao gerar resposta com {config.provider}: {str(e)}")
+            raise
 
     def configure(
         self,
@@ -248,30 +285,45 @@ class ModelManager:
         try:
             # Se uma nova chave foi fornecida, recarrega as configurações
             if api_key:
-                self.configs.clear()
-                self._add_openai_models(api_key)
-            
+                # Determina o provedor com base no modelo
+                if model.startswith("gpt-"):
+                    self._add_openai_models(api_key)
+                elif model.startswith("openrouter/") or model.startswith("anthropic/"):
+                    self._add_openrouter_models(api_key)
+                elif model.startswith("gemini-"):
+                    self._add_gemini_models(api_key)
+                else:
+                    raise ValueError(f"Provedor não identificado para o modelo {model}")
+
             # Verifica se o modelo principal está disponível
-            if not self.get_model_config(model):
+            config = self.get_model_config(model)
+            if not config:
                 raise ValueError(f"Modelo {model} não disponível")
-            
-            # Se houver modelo de elevação, verifica se está disponível
-            if elevation_model and not self.get_model_config(elevation_model):
-                raise ValueError(f"Modelo de elevação {elevation_model} não disponível")
-            
-            # Atualiza as configurações do modelo principal
-            self.configs[model] = ModelConfig(
-                provider=ModelProvider.OPENAI,
-                model_id=model,
-                api_key=api_key or get_env_var("OPENAI_KEY"),
-                timeout=timeout,
-                max_retries=max_retries,
-                temperature=temperature,
-                max_tokens=max_tokens
+
+            # Atualiza configurações do modelo principal
+            config.timeout = timeout
+            config.max_retries = max_retries
+            config.temperature = temperature
+            if max_tokens:
+                config.max_tokens = max_tokens
+
+            # Se houver modelo de elevação, verifica e configura
+            if elevation_model:
+                elevation_config = self.get_model_config(elevation_model)
+                if not elevation_config:
+                    raise ValueError(f"Modelo de elevação {elevation_model} não disponível")
+                
+                # Atualiza configurações do modelo de elevação
+                elevation_config.timeout = timeout
+                elevation_config.max_retries = max_retries
+                elevation_config.temperature = temperature
+                if max_tokens:
+                    elevation_config.max_tokens = max_tokens
+
+            logger.info(
+                f"ModelManager configurado com sucesso: modelo={model}, elevation={elevation_model}"
             )
-            
-            logger.info(f"ModelManager configurado com sucesso: modelo={model}, elevation={elevation_model}")
-            
+
         except Exception as e:
             logger.error(f"Erro ao configurar ModelManager: {str(e)}")
             raise 

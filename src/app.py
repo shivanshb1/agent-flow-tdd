@@ -33,8 +33,11 @@ class TriageAgent:
         """
     
     def route(self, context: str) -> List[str]:
-        prompt = f"{self.system_prompt}\n\nContexto:\n{context}"
-        response = self.model_manager.generate(prompt, temperature=0)
+        response = self.model_manager.generate(
+            prompt=context,
+            system_prompt=self.system_prompt,
+            temperature=0
+        )
         return json.loads(response)
 
 class DeterministicPreprocessingAgent:
@@ -50,8 +53,12 @@ class DeterministicPreprocessingAgent:
         """
     
     def process(self, input_text: str, context: str) -> str:
-        prompt = f"{self.system_prompt}\n\nContexto:\n{context}\n\nInput:\n{input_text}"
-        return self.model_manager.generate(prompt, temperature=0.3)
+        prompt = f"Contexto:\n{context}\n\nInput:\n{input_text}"
+        return self.model_manager.generate(
+            prompt=prompt,
+            system_prompt=self.system_prompt,
+            temperature=0.3
+        )
 
 class AnalyticalAnalysisAgent:
     def __init__(self, model_manager: ModelManager):
@@ -66,8 +73,12 @@ class AnalyticalAnalysisAgent:
         """
     
     def analyze(self, processed_data: str, context: str) -> str:
-        prompt = f"{self.system_prompt}\n\nDados Processados:\n{processed_data}\n\nContexto:\n{context}"
-        return self.model_manager.generate(prompt, temperature=0.5)
+        prompt = f"Dados Processados:\n{processed_data}\n\nContexto:\n{context}"
+        return self.model_manager.generate(
+            prompt=prompt,
+            system_prompt=self.system_prompt,
+            temperature=0.5
+        )
 
 class ToolVisualizationAgent:
     def __init__(self, model_manager: ModelManager):
@@ -89,9 +100,13 @@ class ToolVisualizationAgent:
         """
     
     def visualize(self, analysis: str, format_type: str) -> str:
-        prompt = self.markdown_prompt if format_type == "markdown" else self.json_prompt
-        prompt = f"{prompt}\n\nAnálise:\n{analysis}"
-        return self.model_manager.generate(prompt, temperature=0)
+        prompt = f"Análise:\n{analysis}"
+        system_prompt = self.markdown_prompt if format_type == "markdown" else self.json_prompt
+        return self.model_manager.generate(
+            prompt=prompt,
+            system_prompt=system_prompt,
+            temperature=0
+        )
 
 class AgentOrchestrator:
     def __init__(self, api_key: str = None):
