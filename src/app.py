@@ -3,6 +3,7 @@ from typing import List, Dict, Any
 import json
 
 from src.core.utils import ModelManager
+from src.core.logger import trace, agent_span, generation_span
 
 class Message:
     def __init__(self, content: str, source: str, timestamp: float):
@@ -124,6 +125,8 @@ class AgentOrchestrator:
         self.analyst = AnalyticalAnalysisAgent(self.model_manager)
         self.visualizer = ToolVisualizationAgent(self.model_manager)
     
+    @trace(workflow_name="Agent Workflow")
+    @agent_span()
     def handle_input(self, user_input: str) -> Dict[str, Any]:
         # Registrar entrada do usuário
         self.history.add_message(Message(user_input, "User", time.time()))
@@ -140,23 +143,26 @@ class AgentOrchestrator:
         
         # Etapa 2: Pré-processamento
         if "preprocessor" in agents:
-            processed = self.preprocessor.process(user_input, context)
-            self.history.add_message(Message(processed, "Preprocessor", time.time()))
+            with generation_span(name="Preprocessing"):
+                processed = self.preprocessor.process(user_input, context)
+                self.history.add_message(Message(processed, "Preprocessor", time.time()))
         
         # Etapa 3: Análise
         if "analyst" in agents:
-            analysis = self.analyst.analyze(processed or user_input, context)
-            self.history.add_message(Message(analysis, "Analyst", time.time()))
-            
-            # Visualização intermediária
-            markdown_output = self.visualizer.visualize(analysis, "markdown")
-            print(f"Análise Parcial:\n{markdown_output}")
+            with generation_span(name="Analysis"):
+                analysis = self.analyst.analyze(processed or user_input, context)
+                self.history.add_message(Message(analysis, "Analyst", time.time()))
+                
+                # Visualização intermediária
+                markdown_output = self.visualizer.visualize(analysis, "markdown")
+                print(f"Análise Parcial:\n{markdown_output}")
         
         # Etapa 4: Visualização Final
         if "visualizer" in agents:
-            final_output = self.visualizer.visualize(analysis or processed or user_input, "json")
-            self.history.add_message(Message(final_output, "Visualizer", time.time()))
-            return json.loads(final_output)
+            with generation_span(name="Visualization"):
+                final_output = self.visualizer.visualize(analysis or processed or user_input, "json")
+                self.history.add_message(Message(final_output, "Visualizer", time.time()))
+                return json.loads(final_output)
         
         # Se não houver visualizador, retorna o último resultado disponível
         last_output = analysis or processed or user_input

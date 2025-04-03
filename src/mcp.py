@@ -10,6 +10,7 @@ import time
 from typing import Optional, Dict, Any
 
 from src.app import AgentOrchestrator
+from src.core.logger import trace, agent_span, generation_span
 from src.core.utils import ModelManager
 
 from openai import OpenAI
@@ -169,6 +170,8 @@ class MCPHandler:
         )
         logger.info("MCPHandler inicializado com sucesso")
 
+    @trace(workflow_name="MCP Workflow")
+    @agent_span()
     def process_message(self, message: Dict[str, Any]) -> Optional[str]:
         """Processa uma mensagem recebida."""
         try:
@@ -182,7 +185,8 @@ class MCPHandler:
             logger.info(f"Processando mensagem: {content}")
             logger.info(f"Metadata: {metadata}")
             
-            response = self.llm_provider.generate(content, metadata.get("options", {}))
+            with generation_span(name="LLM Generation"):
+                response = self.llm_provider.generate(content, metadata.get("options", {}))
             
             if response:
                 logger.info(f"Resposta gerada: {response['content']}")
