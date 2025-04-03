@@ -1,6 +1,6 @@
 # Makefile para o projeto prompt-tdd
 
-.PHONY: install test run clean autoflake
+.PHONY: install test run clean autoflake dev
 
 # Configuração do ambiente virtual
 VENV = .venv
@@ -37,6 +37,19 @@ run:
 		echo "✅ Servidor MCP iniciado em background (PID: $$!)"; \
 	else \
 		$(PYTHON) -m src.cli "$(prompt-tdd)" --format $(format) --mode $(mode); \
+	fi
+	@make autoflake
+
+# Execução do CLI em modo desenvolvimento
+dev:
+	@echo "🛠️ Executando CLI em modo desenvolvimento..."
+	@if [ "$(mode)" = "mcp" ]; then \
+		rm -f logs/mcp_pipe.log && \
+		echo '{"content": "$(prompt-tdd)", "metadata": {"type": "feature", "options": {"format": "$(format)", "model": "gpt-3.5-turbo", "temperature": 0.7}}}' > logs/mcp_pipe.log && \
+		OPENAI_AGENTS_DISABLE_TRACING=0 $(PYTHON) -m src.cli "$(prompt-tdd)" --format $(format) --mode $(mode) > logs/mcp_server.log 2>&1 & \
+		echo "✅ Servidor MCP iniciado em background (PID: $$!)"; \
+	else \
+		OPENAI_AGENTS_DISABLE_TRACING=0 $(PYTHON) -m src.cli "$(prompt-tdd)" --format $(format) --mode $(mode); \
 	fi
 	@make autoflake
 
